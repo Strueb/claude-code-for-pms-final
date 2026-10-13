@@ -63,3 +63,11 @@ Draft a message to Helen's boss
 ### 10.
 
 Draft a message to Kip's handler please
+
+### 11.
+
+Draft a message to Wen Li please
+
+### 12.
+
+Message about the brief please
