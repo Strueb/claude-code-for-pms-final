@@ -95,3 +95,28 @@ Draft a message to Sofia
 ### 18.
 
 Draft message to Ravi
+
+
+### 19.
+
+Save this summary and is there anything in the interviews that was reported once?
+
+### 20.
+
+Can we also have a graph diagram of this information
+
+### 21.
+
+save graph as both
+
+### 22.
+
+Based on the interviews what is the issue with 4.2
+
+### 23.
+
+Please show me the Wen Li draft and highlight the confirmed one
+
+### 24.
+
+Add the markers please
