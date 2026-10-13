@@ -51,3 +51,7 @@ Draft a similar message to Kip and save both to prompts.md
 ### 7.
 
 Draft a message to Marcus please
+
+### 8.
+
+Draft a message to Nadia
