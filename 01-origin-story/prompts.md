@@ -71,3 +71,11 @@ Draft a message to Wen Li please
 ### 12.
 
 Message about the brief please
+
+### 13.
+
+Draft a message to Kip
+
+### 14.
+
+Draft a message to Gale please
