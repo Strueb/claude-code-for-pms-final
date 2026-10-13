@@ -47,3 +47,7 @@ Draft a message to Aunt Dot please
 ### 6.
 
 Draft a similar message to Kip and save both to prompts.md
+
+### 7.
+
+Draft a message to Marcus please
