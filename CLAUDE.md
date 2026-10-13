@@ -68,3 +68,6 @@ Check claims against the data before repeating them. Keep facts (wiki, database)
 - Still open: Wen Li's intent on equal treatment of all responders, what Availability Confidence is, who owns the Supply 4.3 commitment, and whether a miss should score like a decline.
 - More unsent drafts now in `drafts/`: Aunt Dot, Kip, Marcus, Nadia. Nothing has been sent yet; Marcus and Nadia are internal, the two handlers are customers (keep the cause out of those messages).
 - Decision: Helen first, before anyone above her. Helen's boss isn't named anywhere in the wiki, so ask for the name only if it comes to that.
+- Drafts added since: Linda Pruitt, Desmond Okafor (send the same day with the same promised date), Sofia, Meteor Mite and The Gale (via Kip first; the channel for reaching a responder is unconfirmed), and a Wen Li ranking walkthrough for the pinging write-up Priya asked for. All unsent, all in `drafts/`.
+- The Gale (Kip's other responder) is not frozen out: pings rose from about 13 to 17 a week with more misses and declines, so the load shifted to the other 12 responders may become a problem too.
+- Sofia ran the September interviews but `feedback/` is empty, so her notes still need to be requested. Desmond also has an unrelated open billing ticket (invoice lists The Undertow twice); ask Nadia.
