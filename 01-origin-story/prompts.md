@@ -197,3 +197,10 @@ Yes, save to feedback
 ### 41.
 
 Based on this, do we have a fix identified for 4.2
+
+
+### 42.
+
+```
+You've now read both folders. Where do they disagree? What's loud in the interviews but rare in the tickets, and what's all over the tickets that nobody brought up in the interviews?
+```
