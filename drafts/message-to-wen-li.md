@@ -23,6 +23,7 @@ Can you help me with these?
 3. Is a miss meant to count the same as a decline in the score? The Glossary says they're recorded separately.
 4. Is there any way for you to pull the current recent-acceptance scores for those four responders (Vesper, Farlight, The Undertow, Meteor Mite)?
 5. What is Availability Confidence? It's committed for 4.2 on the roadmap but I can't find it in the release or the code.
+6. Can anything outside the app's availability toggle remove someone from the candidate list, and do you have a record of availability changes for the four?
 
 I'm not proposing a change yet. I'd like to understand it with you first, then take it to Helen.
 
