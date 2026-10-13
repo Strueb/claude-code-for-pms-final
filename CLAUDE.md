@@ -61,3 +61,8 @@ I'm the new PM for **Rook Dispatch** (took over from Priya Raghunathan, who left
 
 ### How to help me
 Check claims against the data before repeating them. Keep facts (wiki, database) separate from opinions (Priya's read). Flag when roles or sources conflict.
+
+- Unsent drafts and the full contradictions/data write-up are in `drafts/` (Wen Li, Helen, Ravi, `dispatch-4-2-analysis.md`). Plan: Wen Li first, Helen after the reply, Ravi for per-responder and prior-year numbers. Keep responder names out of wide channels.
+- Database has five tables (callouts, pings, responders, handlers, support_tickets), data only to 6/7 Sep, with no ranking scores or prior-year history.
+- Handlers of the four frozen-out responders: Aunt Dot (Vesper) and Kip (Meteor Mite) filed no tickets, so call them; Linda Pruitt (Farlight) and Desmond Okafor (The Undertow) filed many.
+- Still open: Wen Li's intent on equal treatment of all responders, what Availability Confidence is, who owns the Supply 4.3 commitment, and whether a miss should score like a decline.

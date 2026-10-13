@@ -24,6 +24,12 @@ prompt library built from your own questions.
 
 ### 1.
 
+Draft amessage to Wen Li about the brief
+
 ### 2.
 
+Draft a message for Helen as well please
+
 ### 3.
+
+Draft a message to Ravi please
