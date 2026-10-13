@@ -120,3 +120,40 @@ Please show me the Wen Li draft and highlight the confirmed one
 ### 24.
 
 Add the markers please
+
+
+### 25.
+
+Can we hypothesize if the missed pings from the shorter wait push people down the list, and then they rarely get pinged again
+
+### 26.
+
+Run check 3
+
+### 27.
+
+run the replay of Farlight
+
+### 28.
+
+Check call out areas please
+
+### 29.
+
+Yes, read availability.py
+
+### 30.
+
+Yes, save this to feedback/ and add the availability point to the Wen Li draft?
+
+### 31.
+
+add a sixth question to the Wen Li draft: “Can anything outside the app’s availability toggle remove someone from the candidate list, and do you have a record of availability changes for the four?
+
+### 32.
+
+Do we have a possible fix for 4.2 identified?
+
+### 33.
+
+Yes, please write up a option brief for Helen
