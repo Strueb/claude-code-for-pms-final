@@ -24,12 +24,18 @@ prompt library built from your own questions.
 
 ### 1.
 
-Draft amessage to Wen Li about the brief
+```
+What's contradictory or missing across the wiki pages, the handover note, and the rest of this folder?
+```
 
 ### 2.
 
-Draft a message for Helen as well please
+Draft amessage to Wen Li about the brief
 
 ### 3.
+
+Draft a message for Helen as well please
+
+### 4.
 
 Draft a message to Ravi please
