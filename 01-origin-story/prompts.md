@@ -39,3 +39,11 @@ Draft a message for Helen as well please
 ### 4.
 
 Draft a message to Ravi please
+
+### 5.
+
+Draft a message to Aunt Dot please
+
+### 6.
+
+Draft a similar message to Kip and save both to prompts.md
