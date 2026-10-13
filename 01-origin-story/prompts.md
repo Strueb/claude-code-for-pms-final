@@ -184,3 +184,16 @@ Draft message to Helen with option brief
 ### 38.
 
 Draft a message to Marcus with option brief
+
+
+### 39.
+
+Provide a summary of the ping issue and what the fix options are
+
+### 40.
+
+Yes, save to feedback
+
+### 41.
+
+Based on this, do we have a fix identified for 4.2
