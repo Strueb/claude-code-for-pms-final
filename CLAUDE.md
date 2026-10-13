@@ -66,3 +66,5 @@ Check claims against the data before repeating them. Keep facts (wiki, database)
 - Database has five tables (callouts, pings, responders, handlers, support_tickets), data only to 6/7 Sep, with no ranking scores or prior-year history.
 - Handlers of the four frozen-out responders: Aunt Dot (Vesper) and Kip (Meteor Mite) filed no tickets, so call them; Linda Pruitt (Farlight) and Desmond Okafor (The Undertow) filed many.
 - Still open: Wen Li's intent on equal treatment of all responders, what Availability Confidence is, who owns the Supply 4.3 commitment, and whether a miss should score like a decline.
+- More unsent drafts now in `drafts/`: Aunt Dot, Kip, Marcus, Nadia. Nothing has been sent yet; Marcus and Nadia are internal, the two handlers are customers (keep the cause out of those messages).
+- Decision: Helen first, before anyone above her. Helen's boss isn't named anywhere in the wiki, so ask for the name only if it comes to that.
