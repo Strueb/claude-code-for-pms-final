@@ -169,3 +169,8 @@ Use the rook-database connector. Call describe_table on support_tickets, then ru
 ### 35.
 
 Add slot 34 to prompts
+
+
+### 36.
+
+Draft message to Wen Li with 6 questions and save draft and to prompts.md please
