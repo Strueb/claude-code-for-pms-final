@@ -164,3 +164,8 @@ Yes, please write up a option brief for Helen
 ```
 Use the rook-database connector. Call describe_table on support_tickets, then run_query. Same treatment as before: group them, tell me how many are in each group, and quote one line from each. Count every row, including ones that look unrelated.
 ```
+
+
+### 35.
+
+Add slot 34 to prompts
