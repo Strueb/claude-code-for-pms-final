@@ -59,3 +59,7 @@ Draft a message to Nadia
 ### 9.
 
 Draft a message to Helen's boss
+
+### 10.
+
+Draft a message to Kip's handler please
