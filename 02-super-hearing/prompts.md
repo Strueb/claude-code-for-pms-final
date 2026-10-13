@@ -124,3 +124,8 @@ Add slot 42
 ```
 Use the rook-wiki connector. Open the Customer interviews database with search_wiki, then read_database, and read_page for each interview. These are four conversations with the people who run the console for our responders. Tell me what they're unhappy about, group it, tell me how many of the four raised each thing, and quote one line for each so I can hear how they actually said it.
 ```
+
+
+### 27.
+
+Add first prompt to slot 26
