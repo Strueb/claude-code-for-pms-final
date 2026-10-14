@@ -158,3 +158,7 @@ Reviewing the code and the ping table, I have a question from Marcus that I need
 ### 36.
 
 Draft reply to Marcus please with this info
+
+### 37.
+
+Please correct the Aug 24 date on Marcus draft
