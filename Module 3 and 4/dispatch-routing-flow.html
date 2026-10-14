@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>How Dispatch routing works: flow diagram</title>
+<title>How Dispatch routing works, with a proposed retry after a miss</title>
 <style>
   :root { color-scheme: light dark; }
   body { margin: 0; padding: 24px; background: #f9f9f7; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
@@ -14,6 +14,7 @@
     --step: #2a78d6;      /* normal steps */
     --flag: #eb6834;      /* changed in 4.2, or where a miss is treated as a turn-down */
     --done: #1baf7a;      /* end states */
+    --prop: #4a3aa7;      /* proposed, not built */
     max-width: 860px; margin: 0 auto; padding: 20px 24px 16px; background: var(--surface-1);
     border: 1px solid var(--border); border-radius: 12px; color: var(--text-primary);
   }
@@ -23,7 +24,7 @@
       color-scheme: dark;
       --surface-1: #1a1a19; --surface-2: #262624; --text-primary: #ffffff; --text-secondary: #c3c2b7; --text-muted: #898781;
       --line: #898781; --border: rgba(255,255,255,0.10);
-      --step: #3987e5; --flag: #d95926; --done: #199e70;
+      --step: #3987e5; --flag: #d95926; --done: #199e70; --prop: #9085e9;
     }
   }
   h1 { font-size: 18px; font-weight: 600; margin: 0 0 4px; }
@@ -33,18 +34,22 @@
   .t1 { font-size: 13px; font-weight: 600; }
   .t2 { font-size: 11px; fill: var(--text-secondary); }
   .t3 { font-size: 11px; fill: var(--text-secondary); }
-  .tag { font-size: 11px; fill: var(--text-muted); }
   .edge { stroke: var(--line); stroke-width: 1.5; fill: none; }
+  .edge.prop { stroke: var(--prop); stroke-dasharray: 6 4; }
   .box { fill: var(--surface-2); stroke: var(--step); stroke-width: 1.5; }
   .box.flag { stroke: var(--flag); stroke-width: 2; }
+  .box.prop, .dec.prop { stroke: var(--prop); stroke-width: 2; stroke-dasharray: 6 4; }
   .pill { fill: var(--surface-2); stroke: var(--done); stroke-width: 1.5; }
   .pill.flag { stroke: var(--flag); stroke-width: 2; }
   .note { fill: none; stroke: var(--flag); stroke-width: 1; stroke-dasharray: 4 3; }
+  .note.prop { stroke: var(--prop); }
   .dec { fill: var(--surface-2); stroke: var(--step); stroke-width: 1.5; }
   .lab { font-size: 11px; font-weight: 600; fill: var(--text-secondary); }
+  .lab.prop, .t1.prop { fill: var(--prop); }
   .legend { display: flex; flex-wrap: wrap; gap: 6px 22px; font-size: 12px; color: var(--text-secondary); margin: 10px 0 0; }
   .legend span { display: inline-flex; align-items: center; gap: 8px; }
   .legend i { display: inline-block; width: 16px; height: 12px; border: 2px solid; border-radius: 3px; background: var(--surface-2); }
+  .legend i.dash { border-style: dashed; }
   details { margin-top: 12px; font-size: 13px; color: var(--text-secondary); }
   summary { cursor: pointer; }
   ol { margin: 8px 0 0; padding-left: 22px; }
@@ -54,14 +59,17 @@
 </head>
 <body>
 <div class="viz-root">
-  <h1>How Dispatch decides who to ask, and what happens when they don't say yes</h1>
-  <p class="sub">The routing code in <code>00-rook/code/dispatch-routing/</code>, as it stands after 4.2 (12 Aug 2026).</p>
+  <h1>How Dispatch decides who to ask, with a proposed retry after a miss</h1>
+  <p class="sub">The routing code in <code>00-rook/code/dispatch-routing/</code> as it stands after 4.2 (12 Aug 2026). The purple dashed steps are a proposal (option G in the brief for Helen), not built.</p>
 
-  <svg viewBox="0 0 820 870" role="img"
-       aria-label="Flow diagram. A callout arrives. Dispatch finds who is available, ranks them best first, then takes the next responder on the list, pings their phone and waits up to 60 seconds. If they take it, the score goes up 0.08 and the callout is filled. If they turn it down, or do not answer and the offer is withdrawn and recorded as missed, the score goes down 0.12 in both cases. If there are more responders it moves to the next one, otherwise the callout goes unfilled with no retry.">
+  <svg viewBox="0 0 820 960" role="img"
+       aria-label="Flow diagram. A callout arrives. Dispatch finds who is available, ranks them best first, then takes the next responder, pings their phone and waits up to 60 seconds. If they take it, the score goes up 0.08 and the callout is filled. If they turn it down, the score goes down 0.12. If they do not answer, the offer is withdrawn and recorded as missed. Proposed: on a first miss, ping the same responder once more and check the three outcomes again; on a second miss, or any miss today, the score goes down 0.12, the same as a turn-down. If anyone is left on the list, the next responder is asked, otherwise the callout goes unfilled with no retry.">
     <defs>
       <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
         <path d="M0 0 L10 5 L0 10 Z" style="fill: var(--line)"/>
+      </marker>
+      <marker id="arrowp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+        <path d="M0 0 L10 5 L0 10 Z" style="fill: var(--prop)"/>
       </marker>
     </defs>
 
@@ -122,13 +130,13 @@
     <text class="t1" x="74" y="549" text-anchor="middle">Callout filled</text>
     <text class="t2" x="74" y="564" text-anchor="middle">stop</text>
 
-    <!-- turned down -->
+    <!-- turned down: goes straight to the score box -->
     <path class="edge" d="M420 470 H470" marker-end="url(#arrow)"/>
     <text class="lab" x="445" y="462" text-anchor="middle">said no</text>
     <rect class="box flag" x="470" y="444" width="170" height="52" rx="8"/>
     <text class="t1" x="555" y="466" text-anchor="middle">Turned down</text>
     <text class="t2" x="555" y="483" text-anchor="middle">score −0.12</text>
-    <path class="edge" d="M555 496 V696 H300" />
+    <path class="edge" d="M640 470 H680 V808 H300"/>
 
     <!-- missed -->
     <path class="edge" d="M300 516 V544" marker-end="url(#arrow)"/>
@@ -136,43 +144,65 @@
     <rect class="box" x="150" y="544" width="300" height="52" rx="8"/>
     <text class="t1" x="300" y="566" text-anchor="middle">Offer withdrawn from their phone</text>
     <text class="t2" x="300" y="583" text-anchor="middle">recorded as MISSED (offer.py)</text>
-    <path class="edge" d="M300 596 V624" marker-end="url(#arrow)"/>
-    <rect class="box flag" x="150" y="624" width="300" height="52" rx="8"/>
-    <text class="t1" x="300" y="646" text-anchor="middle">Score −0.12, same as a turn-down</text>
-    <text class="t2" x="300" y="663" text-anchor="middle">dispatch() treats the two alike</text>
-    <path class="edge" d="M300 676 V696"/>
-    <path class="edge" d="M300 696 V716" marker-end="url(#arrow)"/>
+    <path class="edge" d="M300 596 V620" marker-end="url(#arrow)"/>
 
-    <path class="note" d="M10 596 h140 v108 h-140 z"/>
-    <text class="t3" x="18" y="616">A miss costs the</text>
-    <text class="t3" x="18" y="631">same as a turn-down.</text>
-    <text class="t3" x="18" y="651">Scores never decay</text>
-    <text class="t3" x="18" y="666">and only change when</text>
-    <text class="t3" x="18" y="681">the responder is</text>
-    <text class="t3" x="18" y="696">pinged.</text>
-    <path class="edge" d="M150 650 H150" />
+    <!-- PROPOSED: retry decision -->
+    <path class="dec prop" d="M300 620 L420 664 L300 708 L180 664 Z"/>
+    <text class="t1 prop" x="300" y="660" text-anchor="middle">Proposed: first miss</text>
+    <text class="t1 prop" x="300" y="676" text-anchor="middle">for this responder?</text>
+    <!-- yes: ping again -->
+    <path class="edge prop" d="M420 664 H470" marker-end="url(#arrowp)"/>
+    <text class="lab prop" x="445" y="656" text-anchor="middle">yes</text>
+    <rect class="box prop" x="470" y="640" width="190" height="48" rx="8"/>
+    <text class="t1 prop" x="565" y="661" text-anchor="middle">Ping them again</text>
+    <text class="t2" x="565" y="677" text-anchor="middle">same responder, once, wait 60 s</text>
+    <!-- loop back into the wait, with a hop over the turned-down line at x=680 -->
+    <path class="edge prop" d="M660 664 H674 a6 6 0 0 1 12 0 H740 V413 H302" marker-end="url(#arrowp)"/>
+    <text class="t3" x="710" y="540" text-anchor="middle">retry:</text>
+    <text class="t3" x="710" y="555" text-anchor="middle">same 3</text>
+    <text class="t3" x="710" y="570" text-anchor="middle">outcomes</text>
+    <!-- note on the proposal -->
+    <path class="note prop" d="M470 716 h200 v58 h-200 z"/>
+    <text class="t3" x="480" y="734">Option G in the brief. Could be</text>
+    <text class="t3" x="480" y="750">limited to the last responder on</text>
+    <text class="t3" x="480" y="766">the list. Adds up to 60 s.</text>
+    <!-- no: score -->
+    <path class="edge" d="M300 708 V736" marker-end="url(#arrow)"/>
+    <text class="lab" x="312" y="726">no: already retried</text>
+    <rect class="box flag" x="150" y="736" width="300" height="52" rx="8"/>
+    <text class="t1" x="300" y="758" text-anchor="middle">Score −0.12, same as a turn-down</text>
+    <text class="t2" x="300" y="775" text-anchor="middle">dispatch() treats the two alike</text>
+    <path class="edge" d="M300 788 V808"/>
+    <path class="edge" d="M300 808 V828" marker-end="url(#arrow)"/>
+
+    <path class="note" d="M10 600 h130 v108 h-130 z"/>
+    <text class="t3" x="18" y="620">Today a miss costs</text>
+    <text class="t3" x="18" y="635">the same as a turn-</text>
+    <text class="t3" x="18" y="650">down. Scores never</text>
+    <text class="t3" x="18" y="665">decay and only change</text>
+    <text class="t3" x="18" y="680">when the responder</text>
+    <text class="t3" x="18" y="695">is pinged.</text>
 
     <!-- 7 more responders -->
-    <path class="dec" d="M300 716 L420 760 L300 804 L180 760 Z"/>
-    <text class="t1" x="300" y="756" text-anchor="middle">Anyone left</text>
-    <text class="t1" x="300" y="772" text-anchor="middle">on the list?</text>
-    <!-- yes: loop back -->
-    <path class="edge" d="M420 760 H700 V300 H450" marker-end="url(#arrow)"/>
-    <text class="lab" x="560" y="752" text-anchor="middle">yes: ask the next one</text>
-    <!-- no: unfilled -->
-    <path class="edge" d="M180 760 H160" marker-end="url(#arrow)"/>
-    <text class="lab" x="170" y="752" text-anchor="middle">no</text>
-    <rect class="pill flag" x="10" y="736" width="150" height="48" rx="24"/>
-    <text class="t1" x="85" y="757" text-anchor="middle">Unfilled</text>
-    <text class="t2" x="85" y="773" text-anchor="middle">returns nobody</text>
-    <text class="t3" x="10" y="806">No retry, no alert to the</text>
-    <text class="t3" x="10" y="821">handler, nothing recorded.</text>
+    <path class="dec" d="M300 828 L420 872 L300 916 L180 872 Z"/>
+    <text class="t1" x="300" y="868" text-anchor="middle">Anyone left</text>
+    <text class="t1" x="300" y="884" text-anchor="middle">on the list?</text>
+    <path class="edge" d="M420 872 H780 V300 H450" marker-end="url(#arrow)"/>
+    <text class="lab" x="600" y="864" text-anchor="middle">yes: ask the next one</text>
+    <path class="edge" d="M180 872 H160" marker-end="url(#arrow)"/>
+    <text class="lab" x="170" y="864" text-anchor="middle">no</text>
+    <rect class="pill flag" x="10" y="848" width="150" height="48" rx="24"/>
+    <text class="t1" x="85" y="869" text-anchor="middle">Unfilled</text>
+    <text class="t2" x="85" y="885" text-anchor="middle">returns nobody</text>
+    <text class="t3" x="10" y="918">No retry, no alert to the</text>
+    <text class="t3" x="10" y="933">handler, nothing recorded.</text>
   </svg>
 
   <div class="legend">
-    <span><i style="border-color: var(--step)"></i>A step in the routing</span>
+    <span><i style="border-color: var(--step)"></i>A step in the routing today</span>
     <span><i style="border-color: var(--flag)"></i>Changed in 4.2, or where a miss is treated like a turn-down</span>
     <span><i style="border-color: var(--done)"></i>An end state</span>
+    <span><i class="dash" style="border-color: var(--prop)"></i>Proposed, not built</span>
   </div>
 
   <details>
@@ -184,11 +214,13 @@
       <li>It takes the next responder on the list, pings their phone and waits up to 60 seconds (<code>offer.py</code>).</li>
       <li>If they take it, their score goes up 0.08 and the callout is filled.</li>
       <li>If they turn it down, their score goes down 0.12 and Dispatch moves on.</li>
-      <li>If they don't answer in 60 seconds, the offer is withdrawn from their phone and recorded as missed. Their score goes down 0.12, the same as a turn-down, and Dispatch moves on.</li>
-      <li>If there is nobody left, the callout is unfilled: the code returns nobody, with no retry and no alert.</li>
+      <li>If they don't answer in 60 seconds, the offer is withdrawn from their phone and recorded as missed.</li>
+      <li><strong>Proposed:</strong> on a responder's first miss for this callout, ping the same responder once more and wait another 60 seconds. The same three outcomes apply to the second try. It could be limited to the last responder on the list.</li>
+      <li>On a miss that is not retried (today, every miss), their score goes down 0.12, the same as a turn-down, and Dispatch moves on.</li>
+      <li>If there is nobody left, the callout is unfilled: the code returns nobody, with no retry of the list and no alert.</li>
     </ol>
   </details>
-  <p class="foot">Drawn from reading the code, not from running it. <code>availability.py</code>, the device calls in <code>offer.py</code> and the travel-time estimate are placeholders in this copy, so what they do inside is not shown. Scores are held in <code>history.py</code>: between 0 and 1, starting at 0.5. A responder's score only changes when they are pinged.</p>
+  <p class="foot">Drawn from reading the code, not from running it. <code>availability.py</code>, the device calls in <code>offer.py</code> and the travel-time estimate are placeholders in this copy, so what they do inside is not shown. Scores are held in <code>history.py</code>: between 0 and 1, starting at 0.5. A responder's score only changes when they are pinged. The retry is a proposal: in the replay data the next responder took 90 of 135 missed pings, 26 callouts ended unfilled right after a miss, and we can't tell whether a repeat ping would be answered. The proposal changes the flow only; it does not change how a miss is scored (that is option B).</p>
 </div>
 </body>
 </html>
