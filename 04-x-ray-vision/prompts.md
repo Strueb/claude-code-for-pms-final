@@ -46,3 +46,23 @@ Add them as a third line
 ### 8.
 
 Copy the Chart into x-ray vision 04 please
+
+### 9.
+
+Are the other 10 drifting down?
+
+### 10.
+
+Replay Sgt. Bulwark, The Longcast and Cindermark please
+
+### 11.
+
+Please run the same replay on the other seven of the ten to confirm none is closer to the edge
+
+### 12.
+
+Please add a replay of the live score as a line chart for all ten against Farlight, and then save this to a file in Module 3 and 4.
+
+### 13.
+
+Provide a quick executive summary of the findings
