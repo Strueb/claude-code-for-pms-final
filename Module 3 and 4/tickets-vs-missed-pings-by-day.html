@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Support tickets by type vs missed pings, by day</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { margin: 0; padding: 24px; background: #f9f9f7; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .viz-root {
+    color-scheme: light;
+    --surface-1: #fcfcfb; --text-primary: #0b0b0b; --text-secondary: #52514e; --text-muted: #898781;
+    --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,0.10);
+    --series-1: #2a78d6;   /* tickets: gone too fast */
+    --series-2: #eb6834;   /* missed pings */
+    --series-3: #1baf7a;   /* tickets: quiet */
+    --context: #b9b8b0;    /* tickets: everything else */
+    max-width: 860px; margin: 0 auto; padding: 20px 24px 16px; background: var(--surface-1);
+    border: 1px solid var(--border); border-radius: 12px; color: var(--text-primary);
+  }
+  @media (prefers-color-scheme: dark) {
+    body { background: #0d0d0d; }
+    .viz-root {
+      color-scheme: dark;
+      --surface-1: #1a1a19; --text-primary: #ffffff; --text-secondary: #c3c2b7; --text-muted: #898781;
+      --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+      --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --context: #5a5a56;
+    }
+  }
+  h1 { font-size: 18px; font-weight: 600; margin: 0 0 4px; }
+  .sub { font-size: 13px; color: var(--text-secondary); margin: 0 0 10px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; }
+  .legend span { display: inline-flex; align-items: center; gap: 8px; }
+  .legend b { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
+  .legend i { display: inline-block; width: 18px; height: 0; border-top: 2px solid; }
+  .chart-wrap { position: relative; }
+  svg { width: 100%; height: auto; display: block; overflow: visible; }
+  svg text { font-family: inherit; }
+  .tick { fill: var(--text-muted); font-size: 12px; }
+  .lbl { font-size: 12px; fill: var(--text-secondary); }
+  .ptitle { font-size: 13px; font-weight: 600; fill: var(--text-primary); }
+  .tip {
+    position: absolute; pointer-events: none; display: none; min-width: 210px;
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12); padding: 8px 10px; font-size: 12px; color: var(--text-secondary);
+  }
+  .tip .d { margin-bottom: 4px; }
+  .tip .r { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+  .tip .k { width: 12px; height: 0; border-top: 2px solid; }
+  .tip b { color: var(--text-primary); font-size: 14px; margin-left: auto; }
+  .tip small { color: var(--text-muted); }
+  details { margin-top: 12px; font-size: 13px; color: var(--text-secondary); }
+  summary { cursor: pointer; }
+  .scroll { max-height: 260px; overflow: auto; margin-top: 8px; }
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; font-size: 12px; }
+  th, td { text-align: right; padding: 3px 8px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  th { position: sticky; top: 0; background: var(--surface-1); }
+  .foot { font-size: 12px; color: var(--text-muted); margin-top: 10px; }
+</style>
+</head>
+<body>
+<div class="viz-root">
+  <h1>Missed pings jumped on release day; "gone too fast" tickets came with them, "quiet" tickets a week later</h1>
+  <p class="sub">Per day, 29 Jun – 7 Sep 2026. 4.2 shipped on 12 Aug.</p>
+  <div class="legend">
+    <span><b style="background: var(--series-2)"></b>Missed pings</span>
+    <span><b style="background: var(--series-1)"></b>Tickets: gone too fast</span>
+    <span><b style="background: var(--series-3)"></b>Tickets: quiet</span>
+    <span><b style="background: var(--context)"></b>Tickets: everything else</span>
+    <span><i style="border-color: var(--text-secondary)"></i>7-day average (lines)</span>
+  </div>
+  <div class="chart-wrap">
+    <svg id="c" viewBox="0 0 820 470" role="img"
+         aria-label="Two stacked daily charts. Missed pings go from 0 to 3 a day before 12 August to 7 on 12 August and 12 on 13 August, then ease to 2 to 5 a day. Support tickets split into gone too fast, quiet and everything else. Gone too fast tickets start on 12 August, with 7 in the first five days. Quiet tickets start on 17 August and reach 12 in the week of 24 August. Everything else rises from about 6 a week before 12 August to about 15 a week afterwards."></svg>
+    <div class="tip" id="t"></div>
+  </div>
+  <details>
+    <summary>Table view (every day)</summary>
+    <div class="scroll"><table id="tbl"><thead><tr><th>Day</th><th>Pings sent</th><th>Missed pings</th><th>Tickets: gone too fast</th><th>Tickets: quiet</th><th>Tickets: everything else</th></tr></thead><tbody></tbody></table></div>
+  </details>
+  <p class="foot">Source: rook-database, tables pings and support_tickets. "Gone too fast" is a ticket saying a ping moved on before the responder could answer (15 tickets, from 12 Aug). "Quiet" is a ticket saying a responder is getting far fewer pings or none (30 tickets, from 17 Aug). Both were read from the ticket text; two tickets that report a missed ping after a quiet stretch (#3110, #3140) are counted as "gone too fast". Everything else includes the console-filter complaints that also began with 4.2, as well as gear, billing and access. Ping data ends 6 Sep, so 7 Sep shows tickets only. Hover or tab to a day for the values.</p>
+</div>
+
+<script>
+const START = Date.UTC(2026, 5, 29);
+const missed  = "0,1,0,0,0,2,0,1,2,1,0,0,0,0,2,1,0,0,2,1,0,0,0,1,1,3,0,0,0,1,0,1,1,0,1,0,0,1,0,0,1,0,0,1,7,12,8,6,4,1,2,6,4,7,2,6,6,3,2,2,2,5,4,2,4,3,2,3,2,5".split(",").map(Number);
+const pings   = "23,22,35,23,25,25,19,26,33,27,21,12,21,30,26,19,21,27,29,24,28,24,20,30,27,28,25,22,29,25,20,21,21,23,31,20,17,38,28,30,23,16,32,19,25,25,30,24,22,24,25,24,19,25,16,25,25,18,23,20,22,22,32,19,25,17,25,30,30,19".split(",").map(Number);
+const total   = "1,1,1,1,0,1,1,2,1,1,0,1,1,0,1,2,2,1,0,1,1,1,1,0,2,1,0,0,1,1,2,1,0,1,1,0,2,1,0,2,0,2,1,0,2,3,5,4,5,1,4,5,4,4,4,5,3,6,5,2,5,4,7,1,6,3,5,4,4,2,4".split(",").map(Number);
+const N = total.length, NP = missed.length;   // 71 days (to 7 Sep); ping data 70 days (to 6 Sep)
+if (N !== 71 || NP !== 70 || pings.length !== 70) throw new Error("length mismatch " + [N, NP, pings.length]);
+const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep"];
+const dayIndex = md => Math.round((Date.UTC(2026, +md.slice(0, 2) - 1, +md.slice(3)) - START) / 864e5);   // "08-12"
+const dayLabel = i => { const d = new Date(START + i * 864e5); return d.getUTCDate() + " " + MON[d.getUTCMonth()]; };
+const RELEASE = dayIndex("08-12");
+
+// ticket classification, read from the ticket text: [ticket number, date filed]
+const GONE = [[3041,"08-12"],[3043,"08-13"],[3047,"08-14"],[3048,"08-14"],[3052,"08-15"],[3055,"08-16"],[3056,"08-16"],[3065,"08-19"],[3077,"08-21"],[3078,"08-22"],[3091,"08-25"],[3110,"08-29"],[3113,"08-30"],[3123,"09-01"],[3140,"09-05"]];
+const QUIET = [[3060,"08-17"],[3070,"08-20"],[3071,"08-20"],[3073,"08-20"],[3080,"08-22"],[3081,"08-22"],[3083,"08-23"],[3086,"08-23"],[3088,"08-24"],[3089,"08-24"],[3096,"08-26"],[3097,"08-26"],[3098,"08-26"],[3099,"08-26"],[3103,"08-28"],[3104,"08-28"],[3108,"08-29"],[3112,"08-30"],[3114,"08-30"],[3118,"08-30"],[3120,"09-01"],[3121,"09-01"],[3129,"09-03"],[3130,"09-03"],[3131,"09-03"],[3135,"09-04"],[3138,"09-05"],[3139,"09-05"],[3145,"09-07"],[3147,"09-07"]];
+const gone = new Array(N).fill(0), quiet = new Array(N).fill(0);
+GONE.forEach(([, d]) => gone[dayIndex(d)]++);
+QUIET.forEach(([, d]) => quiet[dayIndex(d)]++);
+const other = total.map((t, i) => t - gone[i] - quiet[i]);
+if (other.some(v => v < 0) || GONE.length !== 15 || QUIET.length !== 30) throw new Error("classification does not fit the daily totals");
+
+const avg7 = a => a.map((_, i) => { const s = a.slice(Math.max(0, i - 6), i + 1); return s.reduce((x, y) => x + y, 0) / s.length; });
+const mAvg = avg7(missed), tAvg = avg7(total);
+
+const NS = "http://www.w3.org/2000/svg";
+const W = 820, H = 470, m = {l: 44, r: 20, t: 8, b: 34};
+const panelH = 170, gap = 52;
+const iw = W - m.l - m.r;
+const x = i => m.l + (i + 0.5) * iw / N;
+const bw = iw / N;
+const svg = document.getElementById("c"), tip = document.getElementById("t"), wrap = svg.parentElement;
+const el = (n, a) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); svg.appendChild(e); return e; };
+
+function frame(top, title, ymax, step) {
+  const y = v => top + panelH - v / ymax * panelH;
+  el("text", {x: m.l, y: top - 2, class: "ptitle"}).textContent = title;
+  for (let v = 0; v <= ymax; v += step) {
+    el("line", {x1: m.l, x2: m.l + iw, y1: y(v), y2: y(v), stroke: v === 0 ? "var(--axis)" : "var(--grid)", "stroke-width": 1});
+    el("text", {x: m.l - 8, y: y(v) + 4, "text-anchor": "end", class: "tick"}).textContent = v;
+  }
+  return y;
+}
+const releaseLine = top => el("line", {x1: x(RELEASE), x2: x(RELEASE), y1: top, y2: top + panelH, stroke: "var(--text-muted)", "stroke-width": 1, "stroke-dasharray": "4 4"});
+const avgLine = (y, avg, color) => el("polyline", {points: avg.map((v, i) => `${x(i)},${y(v)}`).join(" "), fill: "none", stroke: color, "stroke-width": 2, "stroke-linejoin": "round"});
+function peak(y, data, label) {
+  let pk = {v: -1, i: 0}; data.forEach((v, i) => { if (v > pk.v) pk = {v, i}; });
+  const left = x(pk.i) > m.l + iw - 150;
+  el("text", {x: left ? x(pk.i) - 8 : x(pk.i) + 8, y: y(pk.v) + 4, "text-anchor": left ? "end" : "start", class: "lbl"}).textContent = `${label}: ${pk.v} on ${dayLabel(pk.i)}`;
+}
+
+const top1 = m.t + 14, top2 = top1 + panelH + gap;
+// panel 1: missed pings
+const y1 = frame(top1, "Missed pings per day", 12, 3);
+missed.forEach((v, i) => { if (v > 0) el("rect", {x: x(i) - bw / 2 + 1, y: y1(v), width: Math.max(1, bw - 2), height: top1 + panelH - y1(v), fill: "var(--series-2)", "fill-opacity": 0.55, rx: 1.5}); });
+avgLine(y1, mAvg, "var(--series-2)"); releaseLine(top1); peak(y1, missed, "Peak");
+el("text", {x: x(RELEASE) - 6, y: top1 + 12, "text-anchor": "end", class: "lbl"}).textContent = "4.2 ships 12 Aug";
+// panel 2: tickets, stacked by type
+const y2 = frame(top2, "Support tickets filed per day, by type", 8, 2);
+const unit = panelH / 8;
+for (let i = 0; i < N; i++) {
+  let base = top2 + panelH;
+  [[gone[i], "--series-1"], [quiet[i], "--series-3"], [other[i], "--context"]].forEach(([n, c]) => {
+    if (n <= 0) return;
+    const h = n * unit;
+    el("rect", {x: x(i) - bw / 2 + 1, y: base - h + 1, width: Math.max(1, bw - 2), height: Math.max(1, h - 2), fill: `var(${c})`, rx: 1.5});
+    base -= h;
+  });
+}
+avgLine(y2, tAvg, "var(--text-secondary)"); releaseLine(top2); peak(y2, total, "Peak (all types)");
+for (let i = 0; i < N; i += 7) el("text", {x: x(i), y: top2 + panelH + 20, "text-anchor": "middle", class: "tick"}).textContent = dayLabel(i);
+
+const cross = el("line", {y1: top1, y2: top2 + panelH, stroke: "var(--text-muted)", "stroke-width": 1, visibility: "hidden"});
+function row(color, name, val, sub) {
+  const r = document.createElement("div"); r.className = "r";
+  const k = document.createElement("span"); k.className = "k"; k.style.borderColor = color;
+  const n = document.createElement("span"); n.textContent = name;
+  const b = document.createElement("b"); b.textContent = val;
+  r.append(k, n, b); tip.appendChild(r);
+  if (sub) { const s = document.createElement("small"); s.textContent = sub; const w = document.createElement("div"); w.appendChild(s); tip.appendChild(w); }
+}
+function show(i) {
+  cross.setAttribute("x1", x(i)); cross.setAttribute("x2", x(i)); cross.setAttribute("visibility", "visible");
+  tip.replaceChildren();
+  const d = document.createElement("div"); d.className = "d";
+  d.textContent = dayLabel(i) + (i === RELEASE ? " (4.2 shipped)" : ""); tip.appendChild(d);
+  if (i < NP) row("var(--series-2)", "Missed pings", missed[i], `of ${pings[i]} pings · 7-day avg ${mAvg[i].toFixed(1)}`);
+  else row("var(--series-2)", "Missed pings", "no data", "ping data ends 6 Sep");
+  row("var(--series-1)", "Tickets: gone too fast", gone[i]);
+  row("var(--series-3)", "Tickets: quiet", quiet[i]);
+  row("var(--context)", "Tickets: everything else", other[i], `${total[i]} tickets in all · 7-day avg ${tAvg[i].toFixed(1)}`);
+  tip.style.display = "block";
+  const sx = x(i) / W * svg.clientWidth;
+  tip.style.left = (sx + 14 + tip.offsetWidth > wrap.clientWidth ? sx - 14 - tip.offsetWidth : sx + 14) + "px";
+  tip.style.top = "30px";
+}
+function hide() { cross.setAttribute("visibility", "hidden"); tip.style.display = "none"; }
+for (let i = 0; i < N; i++) {
+  const r = el("rect", {x: x(i) - bw / 2, y: top1, width: bw, height: top2 + panelH - top1, fill: "transparent", tabindex: i % 7 === 0 ? 0 : -1,
+    "aria-label": `${dayLabel(i)}: ${i < NP ? missed[i] + " missed pings" : "no ping data"}; tickets: ${gone[i]} gone too fast, ${quiet[i]} quiet, ${other[i]} everything else`});
+  r.addEventListener("pointermove", () => show(i));
+  r.addEventListener("focus", () => show(i));
+  r.addEventListener("pointerleave", hide);
+  r.addEventListener("blur", hide);
+}
+
+const body = document.querySelector("#tbl tbody");
+for (let i = 0; i < N; i++) {
+  const tr = document.createElement("tr");
+  [dayLabel(i), i < NP ? pings[i] : "–", i < NP ? missed[i] : "–", gone[i], quiet[i], other[i]].forEach(t => { const td = document.createElement("td"); td.textContent = t; tr.appendChild(td); });
+  body.appendChild(tr);
+}
+</script>
+</body>
+</html>
