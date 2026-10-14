@@ -25,11 +25,12 @@ Do we change Dispatch routing to fix the 4.2 problems, and which change? I'm not
 | Option | What it changes | What it should fix | Risks and unknowns |
 |---|---|---|---|
 | **A. Restore the 90s ping wait** | One config value, in the next release | The spike in misses for the 12 responders still being pinged, and the "gone before I could answer" complaints | I don't know why 60s was chosen. Callouts may take longer to reach the next responder. On its own it won't bring back the four, and it may leave them with fewer pings (see below). |
-| **B. Count a miss as less than a decline** | Scoring in `history.py` / `offer.py`, in a release | Responders sinking because of misses they didn't choose | Whether a miss should count like a decline is a product decision for Wen Li and you. |
+| **B. Count a miss as less than a decline** | Scoring in `history.py` / `offer.py`, in a release | Responders sinking because of misses they didn't choose. In my replay, if misses cost nothing the four would have ended at 0.76-0.84 instead of near 0; if a miss cost 0.04 they would have ended at 0.52-0.56 | Whether a miss should count like a decline is a product decision for Wen Li and you. It protects responders from sinking but would not have stopped the first misses. The replay is an inference; the live scores aren't in the database. |
 | **C. Let scores recover over time (decay)** | Scoring in `history.py`, in a release | Responders stuck low with no way back | The old TODO warns that someone who has stopped taking work would also recover. |
 | **D. Reset the four responders' scores once** | A one-off operation | Immediate relief for the four | Treats the symptom; they could sink again under the current rules. Unknown how scores persist. |
 | **E. Revert the acceptance weight to 0.40** | One config value | Not supported. | My replay suggests the 4.2 weighting made the score matter less in ranking, so reverting would likely make freeze-outs worse. |
 | **F. Do nothing** | Nothing | Nothing | Acceptance may keep recovering as the other 12 absorb the load, but the four stay frozen out and the load on the 12 may become a problem. |
+| **G. Retry a responder once after a miss** (new offer flow in `offer.py`) | After a missed ping, ping the same responder again before moving down the list. Could be limited to the last responder on the list, where a miss currently ends the callout | The 26 callouts (of 97 unfilled) that ended on a miss, if the miss was a push that never arrived | I can't tell why pings are missed, so I can't tell whether a second ping would be answered. It adds up to a full ping wait to the callout before the next responder is asked. 67% of misses (90 of 135) are already filled by the next responder. It doesn't protect the responder's score: that needs B. A test, not a fix. |
 
 ## Would restoring the 90s wait be enough? (my reasoning)
 Probably part of it, and the right first step. On its own it is unlikely to fix the four, and the data doesn't prove it would recover the missed pings either.
@@ -49,7 +50,7 @@ Probably part of it, and the right first step. On its own it is unlikely to fix 
 **Caveat:** this is inference. I can't see the live scores, the response time for taken pings or prior-year data.
 
 ## My recommendation (provisional)
-A first, to remove the spike in misses for the 12 who are still being pinged. Then B or C so a responder can recover, once Wen Li confirms how the scores work. D only as a stopgap for the four if the fix will take more than one release. I'd drop E and treat F as the risk to avoid.
+A first, to remove the spike in misses for the 12 who are still being pinged. Then B or C so a responder can recover, once Wen Li confirms how the scores work. D only as a stopgap for the four if the fix will take more than one release. G only as a small test (last responder on the list), since I can't tell whether a repeat ping would be answered. I'd drop E and treat F as the risk to avoid.
 
 ## How we'd know it worked
 - Missed pings for the 10 steady responders back from about 12% toward 2-3% within a week or two of the change. Acceptance back toward 77%.
