@@ -105,3 +105,7 @@ Can we track Farlights Takes vs Turn Downs?
 ### 23.
 
 Please chart this as a weekly stacked chart of takes, turn-downs and misses, or add it as a panel on the Farlight chart.
+
+### 24.
+
+If I'd only asked for the number, not the rows, what would I have missed?
