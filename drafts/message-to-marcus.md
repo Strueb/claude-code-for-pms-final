@@ -8,7 +8,7 @@ Thanks for giving me room to look at 4.2 myself before we talked. I've now been 
 
 **What I found**
 - Acceptance was steady at about 77% until 12 August. It dropped to 54% the week of the release and was 73% in the latest week I can see. Missed pings went from 1-3% to 21%, and they're still at 13%.
-- The drop is concentrated. Four responders went from about 49 pings a week combined to 3, and none has taken a ping since 24 August. The rest absorbed the load. That doesn't look like a seasonal dip to me, though I have no prior-year data to rule it out.
+- The drop is concentrated. Four responders went from about 49 pings a week combined to 3, and none has taken a ping since 19 August. The rest absorbed the load. That doesn't look like a seasonal dip to me, though I have no prior-year data to rule it out.
 - On your question from 14 August: the code doesn't distinguish responders who have been turning jobs down. Everyone is ranked by the same weights (`config.py`), so it applies to them like anyone else. Whether that was a decision is for Wen Li.
 - In `history.py`, a decline or a miss costs 0.12 and an accept earns 0.08. A miss is scored like a decline, and there's no decay. 4.2 also cut the acceptance weight from 0.40 to 0.25 and the ping wait from 90s to 60s. My working theory is that missed pings push responders down the list, and then they rarely get pinged again. I can't see the ranking scores, so this is inference.
 
