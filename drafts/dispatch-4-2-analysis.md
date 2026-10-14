@@ -43,7 +43,7 @@ Sources: rook-wiki (About Rook, Glossary, Team directory, Releases, Q3 roadmap, 
 | 31 Aug | 165 | 72.7 | 12.7 | 25 |
 
 - Unfilled callouts: 5.5% before 12 Aug, 11% after. Callout volume dipped about 10%.
-- Four responders (Vesper/Aunt Dot, Farlight, The Undertow, Meteor Mite/Kip) fell from about 49 pings a week combined to 3 by 31 Aug; none has taken a ping since 24 Aug. Everyone else's pings rose from about 123 to 162 a week.
+- Four responders (Vesper/Aunt Dot, Farlight, The Undertow, Meteor Mite/Kip) fell from about 49 pings a week combined to 3 by 31 Aug; none has taken a ping since 19 Aug. Everyone else's pings rose from about 123 to 162 a week.
 - Aunt Dot and Kip filed no tickets; Farlight's and The Undertow's handlers filed many ("Is Farlight still on the list?").
 
 ## Likely mechanism (inference; ranking scores are not in the database)

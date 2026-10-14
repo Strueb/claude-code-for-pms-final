@@ -9,7 +9,7 @@ I'm the new PM on Dispatch, and I'm trying to understand 4.2 before Marcus and I
 I pulled the ping data and read the routing code. Here's what I see:
 
 - Acceptance held at about 77% until 12 August. It then fell to 54% and has partly recovered since. Missed pings rose from 1-3% of pings to 21%, and they're still at 13%.
-- Four responders went from about 49 pings a week combined to 3, and none has taken a ping since 24 August. Meanwhile everyone else's volume went up.
+- Four responders went from about 49 pings a week combined to 3, and none has taken a ping since 19 August. Meanwhile everyone else's volume went up.
 - In `history.py`, a decline or a miss costs 0.12 and an accept earns 0.08. A score only moves when someone is pinged, and there's no decay (the 2019 TODO).
 - 4.2 cut the acceptance weight from 0.40 to 0.25 and the ping wait from 90s to 60s.
 - I replayed one of the four responders' pings through that scoring. Her score falls to zero by 28 August. Her first misses came while the score was still high, so the score doesn't explain why the misses started.

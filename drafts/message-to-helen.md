@@ -8,7 +8,7 @@ I've spent my first weeks getting into Dispatch. I want to give you an early rea
 
 **4.2**
 - Acceptance was steady at about 77% until 12 August. It dropped to 54% the week of the release and has partly recovered since. Missed pings went from 1-3% to 21% and are still at 13%. Tickets are 3-4x normal.
-- The drop isn't spread evenly. Four responders went from about 49 pings a week combined to 3, and none has taken a ping since 24 August. The earlier explanation was that August is always soft. Callout volume did dip about 10%, but the data doesn't support seasonality as the cause. We have no prior-year data, so I can't fully rule it out.
+- The drop isn't spread evenly. Four responders went from about 49 pings a week combined to 3, and none has taken a ping since 19 August. The earlier explanation was that August is always soft. Callout volume did dip about 10%, but the data doesn't support seasonality as the cause. We have no prior-year data, so I can't fully rule it out.
 - I think the cause is in the ranking. 4.2 cut the weight on recent acceptance and shortened the ping wait to 60 seconds. A missed ping counts the same as a decline, and the score never recovers unless someone gets pinged again. I haven't confirmed this. I've asked Wen Li, who built the ranking, and I'll tell you what they say.
 - I'm not proposing a revert. The change was a long-standing request from responders covering wide areas, and I'd like to understand it fully before we choose between a revert, a tuning change or something else. Whatever we do, I'd like your view first.
 
