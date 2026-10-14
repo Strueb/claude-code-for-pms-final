@@ -125,3 +125,27 @@ Would an update to retry as opposed to treating as turn down make an imapct?
 ### 28.
 
 Please add this as a row in the options table of the brief
+
+### 29.
+
+While reviewing this code, is there any clear misses that the dispatch-routing has
+
+### 30.
+
+Please create a flow diagram of the dispatch-routing
+
+### 31.
+
+Update dispatch-routing-flow diagram with proposed added re ping after a miss please
+
+### 32.
+
+Create a proposal of two updates to 4.2 First, go back to 90 sec and second, add re ping logic before treating as a miss please
+
+### 33.
+
+Please provide a pdf version of the proposal
+
+### 34.
+
+include the flow diagram
