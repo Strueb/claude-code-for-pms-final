@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Callouts and unfilled callouts, by day</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { margin: 0; padding: 24px; background: #f9f9f7; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .viz-root {
+    color-scheme: light;
+    --surface-1: #fcfcfb; --text-primary: #0b0b0b; --text-secondary: #52514e; --text-muted: #898781;
+    --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,0.10);
+    --series-1: #2a78d6;   /* callouts */
+    --series-2: #eb6834;   /* unfilled */
+    max-width: 860px; margin: 0 auto; padding: 20px 24px 16px; background: var(--surface-1);
+    border: 1px solid var(--border); border-radius: 12px; color: var(--text-primary);
+  }
+  @media (prefers-color-scheme: dark) {
+    body { background: #0d0d0d; }
+    .viz-root {
+      color-scheme: dark;
+      --surface-1: #1a1a19; --text-primary: #ffffff; --text-secondary: #c3c2b7; --text-muted: #898781;
+      --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+      --series-1: #3987e5; --series-2: #d95926;
+    }
+  }
+  h1 { font-size: 18px; font-weight: 600; margin: 0 0 4px; }
+  .sub { font-size: 13px; color: var(--text-secondary); margin: 0 0 10px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; }
+  .legend span { display: inline-flex; align-items: center; gap: 8px; }
+  .legend b { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
+  .legend i { display: inline-block; width: 18px; height: 0; border-top: 2px solid; }
+  .legend i.dash { border-top-style: dashed; border-top-width: 1px; }
+  .chart-wrap { position: relative; }
+  svg { width: 100%; height: auto; display: block; overflow: visible; }
+  svg text { font-family: inherit; }
+  .tick { fill: var(--text-muted); font-size: 12px; }
+  .lbl { font-size: 12px; fill: var(--text-secondary); }
+  .ptitle { font-size: 13px; font-weight: 600; fill: var(--text-primary); }
+  .tip {
+    position: absolute; pointer-events: none; display: none; min-width: 220px;
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12); padding: 8px 10px; font-size: 12px; color: var(--text-secondary);
+  }
+  .tip .d { margin-bottom: 4px; }
+  .tip .r { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+  .tip .k { width: 12px; height: 0; border-top: 2px solid; }
+  .tip b { color: var(--text-primary); font-size: 14px; margin-left: auto; }
+  .tip small { color: var(--text-muted); }
+  details { margin-top: 12px; font-size: 13px; color: var(--text-secondary); }
+  summary { cursor: pointer; }
+  .scroll { max-height: 260px; overflow: auto; margin-top: 8px; }
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; font-size: 12px; }
+  th, td { text-align: right; padding: 3px 8px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  th { position: sticky; top: 0; background: var(--surface-1); }
+  .foot { font-size: 12px; color: var(--text-muted); margin-top: 10px; }
+</style>
+</head>
+<body>
+<div class="viz-root">
+  <h1>Callouts dipped about 15%, but the share going unfilled roughly doubled, then eased</h1>
+  <p class="sub">Per day, 29 Jun – 6 Sep 2026. 4.2 shipped on 12 Aug. A quiet month would lower the unfilled share, not raise it.</p>
+  <div class="legend">
+    <span><b style="background: var(--series-1)"></b>Callouts per day</span>
+    <span><b style="background: var(--series-2)"></b>Callouts nobody took (unfilled)</span>
+    <span><i style="border-color: var(--text-secondary)"></i>7-day average</span>
+    <span><i class="dash" style="border-color: var(--text-secondary)"></i>Average before 12 Aug</span>
+  </div>
+  <div class="chart-wrap">
+    <svg id="c" viewBox="0 0 820 470" role="img"
+         aria-label="Two stacked daily charts. Callouts per day average about 20 before 12 August and about 17 after. The share of callouts nobody took, as a 7-day rate, runs at about 4 to 5 percent before 12 August, climbs to 12 to 15 percent in the second half of August, and is back to about 7 percent in early September."></svg>
+    <div class="tip" id="t"></div>
+  </div>
+  <details>
+    <summary>Table view (every day)</summary>
+    <div class="scroll"><table id="tbl"><thead><tr><th>Day</th><th>Callouts</th><th>Unfilled</th></tr></thead><tbody></tbody></table></div>
+  </details>
+  <p class="foot">Source: rook-database, tables callouts and pings. A callout counts as unfilled when none of its pings was taken. The unfilled share is the trailing 7-day total of unfilled callouts divided by the trailing 7-day total of callouts, shown once a full 7 days exist. Daily counts are small (0 to 6 unfilled), so read the line, not single days. No prior-year data exists, so a seasonal dip in callout volume cannot be ruled out; this chart only shows it does not account for the unfilled share. Hover or tab to a day for the values.</p>
+</div>
+
+<script>
+const START = Date.UTC(2026, 5, 29);
+const callouts = "19,16,29,22,21,18,16,23,25,21,17,10,16,27,22,15,19,20,19,19,24,19,12,24,23,23,24,19,28,20,16,18,15,18,22,16,17,27,23,25,16,14,25,17,12,13,18,12,13,21,19,20,14,19,12,16,19,16,19,14,16,15,25,13,17,14,20,26,26,11".split(",").map(Number);
+const unfilled = "0,1,3,0,0,2,3,1,1,1,1,4,0,0,1,0,1,1,1,0,1,3,0,1,2,6,0,0,1,1,0,0,0,1,2,2,1,0,0,0,0,1,1,4,1,3,2,1,2,2,2,5,3,2,3,0,4,5,1,2,1,1,2,1,0,2,0,2,0,2".split(",").map(Number);
+const N = callouts.length;                                    // 70 days
+const sum = a => a.reduce((x, y) => x + y, 0);
+if (N !== 70 || unfilled.length !== 70 || sum(callouts) !== 1319 || sum(unfilled) !== 97) throw new Error("data check failed");
+const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep"];
+const dayLabel = i => { const d = new Date(START + i * 864e5); return d.getUTCDate() + " " + MON[d.getUTCMonth()]; };
+const RELEASE = Math.round((Date.UTC(2026, 7, 12) - START) / 864e5);   // 12 Aug = day 44
+
+const win = (a, i) => a.slice(i - 6, i + 1);
+const cAvg = callouts.map((_, i) => i < 6 ? null : sum(win(callouts, i)) / 7);
+const uShare = callouts.map((_, i) => i < 6 ? null : 100 * sum(win(unfilled, i)) / sum(win(callouts, i)));
+const preC = sum(callouts.slice(0, RELEASE)) / RELEASE;
+const postC = sum(callouts.slice(RELEASE)) / (N - RELEASE);
+const preU = 100 * sum(unfilled.slice(0, RELEASE)) / sum(callouts.slice(0, RELEASE));
+const postU = 100 * sum(unfilled.slice(RELEASE)) / sum(callouts.slice(RELEASE));
+
+const NS = "http://www.w3.org/2000/svg";
+const W = 820, H = 470, m = {l: 44, r: 20, t: 8, b: 34};
+const panelH = 170, gap = 52;
+const iw = W - m.l - m.r;
+const x = i => m.l + (i + 0.5) * iw / N;
+const bw = iw / N;
+const svg = document.getElementById("c"), tip = document.getElementById("t"), wrap = svg.parentElement;
+const el = (n, a) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); svg.appendChild(e); return e; };
+
+function frame(top, title, ymax, step, unit) {
+  const y = v => top + panelH - v / ymax * panelH;
+  el("text", {x: m.l, y: top - 2, class: "ptitle"}).textContent = title;
+  for (let v = 0; v <= ymax; v += step) {
+    el("line", {x1: m.l, x2: m.l + iw, y1: y(v), y2: y(v), stroke: v === 0 ? "var(--axis)" : "var(--grid)", "stroke-width": 1});
+    el("text", {x: m.l - 8, y: y(v) + 4, "text-anchor": "end", class: "tick"}).textContent = v + unit;
+  }
+  el("line", {x1: x(RELEASE), x2: x(RELEASE), y1: top, y2: top + panelH, stroke: "var(--text-muted)", "stroke-width": 1, "stroke-dasharray": "4 4"});
+  return y;
+}
+const line = (y, arr, color) => el("polyline", {points: arr.map((v, i) => v == null ? null : `${x(i)},${y(v)}`).filter(Boolean).join(" "), fill: "none", stroke: color, "stroke-width": 2, "stroke-linejoin": "round"});
+function ref(y, v, left, text) {
+  el("line", {x1: m.l, x2: m.l + iw, y1: y(v), y2: y(v), stroke: "var(--text-secondary)", "stroke-width": 1, "stroke-dasharray": "2 4"});
+  el("text", {x: m.l + 4, y: y(v) - 5, class: "lbl"}).textContent = text;
+}
+
+const top1 = m.t + 14, top2 = top1 + panelH + gap;
+// panel 1: callouts
+const y1 = frame(top1, "Callouts per day", 30, 10, "");
+callouts.forEach((v, i) => el("rect", {x: x(i) - bw / 2 + 1, y: y1(v), width: Math.max(1, bw - 2), height: top1 + panelH - y1(v), fill: "var(--series-1)", "fill-opacity": 0.5, rx: 1.5}));
+line(y1, cAvg, "var(--series-1)");
+ref(y1, preC, true, `Before 12 Aug: ${preC.toFixed(1)} a day`);
+el("text", {x: m.l + iw - 4, y: y1(postC) + 16, "text-anchor": "end", class: "lbl"}).textContent = `After: ${postC.toFixed(1)} a day (${Math.round(100 * (postC / preC - 1))}%)`;
+el("text", {x: x(RELEASE) + 6, y: top1 + 12, class: "lbl"}).textContent = "4.2 ships 12 Aug";
+// panel 2: unfilled share
+const y2 = frame(top2, "Share of callouts nobody took (7-day)", 20, 5, "%");
+unfilled.forEach((v, i) => { /* daily counts live in the tooltip and table; the share is the line */ });
+line(y2, uShare, "var(--series-2)");
+ref(y2, preU, true, `Before 12 Aug: ${preU.toFixed(1)}%`);
+el("text", {x: m.l + iw - 4, y: y2(postU) - 8, "text-anchor": "end", class: "lbl"}).textContent = `After: ${postU.toFixed(1)}%`;
+let pk = {v: -1, i: 0}; uShare.forEach((v, i) => { if (v != null && v > pk.v) pk = {v, i}; });
+el("circle", {cx: x(pk.i), cy: y2(pk.v), r: 4, fill: "var(--series-2)", stroke: "var(--surface-1)", "stroke-width": 2});
+el("text", {x: x(pk.i) - 8, y: y2(pk.v) - 8, "text-anchor": "end", class: "lbl"}).textContent = `Peak ${pk.v.toFixed(1)}% (${dayLabel(pk.i)})`;
+for (let i = 0; i < N; i += 7) el("text", {x: x(i), y: top2 + panelH + 20, "text-anchor": "middle", class: "tick"}).textContent = dayLabel(i);
+
+const cross = el("line", {y1: top1, y2: top2 + panelH, stroke: "var(--text-muted)", "stroke-width": 1, visibility: "hidden"});
+function row(color, name, val, sub) {
+  const r = document.createElement("div"); r.className = "r";
+  const k = document.createElement("span"); k.className = "k"; k.style.borderColor = color;
+  const n = document.createElement("span"); n.textContent = name;
+  const b = document.createElement("b"); b.textContent = val;
+  r.append(k, n, b); tip.appendChild(r);
+  if (sub) { const s = document.createElement("small"); s.textContent = sub; const w = document.createElement("div"); w.appendChild(s); tip.appendChild(w); }
+}
+function show(i) {
+  cross.setAttribute("x1", x(i)); cross.setAttribute("x2", x(i)); cross.setAttribute("visibility", "visible");
+  tip.replaceChildren();
+  const d = document.createElement("div"); d.className = "d";
+  d.textContent = dayLabel(i) + (i === RELEASE ? " (4.2 shipped)" : ""); tip.appendChild(d);
+  row("var(--series-1)", "Callouts", callouts[i], cAvg[i] == null ? "" : `7-day avg ${cAvg[i].toFixed(1)}`);
+  row("var(--series-2)", "Unfilled callouts", unfilled[i], uShare[i] == null ? "7-day share starts 4 Jul" : `7-day share ${uShare[i].toFixed(1)}%`);
+  tip.style.display = "block";
+  const sx = x(i) / W * svg.clientWidth;
+  tip.style.left = (sx + 14 + tip.offsetWidth > wrap.clientWidth ? sx - 14 - tip.offsetWidth : sx + 14) + "px";
+  tip.style.top = "30px";
+}
+function hide() { cross.setAttribute("visibility", "hidden"); tip.style.display = "none"; }
+for (let i = 0; i < N; i++) {
+  const r = el("rect", {x: x(i) - bw / 2, y: top1, width: bw, height: top2 + panelH - top1, fill: "transparent", tabindex: i % 7 === 0 ? 0 : -1,
+    "aria-label": `${dayLabel(i)}: ${callouts[i]} callouts, ${unfilled[i]} unfilled`});
+  r.addEventListener("pointermove", () => show(i));
+  r.addEventListener("focus", () => show(i));
+  r.addEventListener("pointerleave", hide);
+  r.addEventListener("blur", hide);
+}
+const body = document.querySelector("#tbl tbody");
+for (let i = 0; i < N; i++) {
+  const tr = document.createElement("tr");
+  [dayLabel(i), callouts[i], unfilled[i]].forEach(t => { const td = document.createElement("td"); td.textContent = t; tr.appendChild(td); });
+  body.appendChild(tr);
+}
+</script>
+</body>
+</html>
