@@ -82,3 +82,11 @@ PM before me mentioned this is just August being quiet. Could we validate if tha
 ### 17.
 
 Please add the callout and unfilled-callout trend to a chart
+
+### 18.
+
+Would updating back to 90 seconds address the issue for 4.2?
+
+### 19.
+
+Please add this reasoning to the option brief for Helen
