@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The four, Ashgrove + Halfmoon, and the other 10: pings and acceptance</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { margin: 0; padding: 24px; background: #f9f9f7; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .viz-root {
+    color-scheme: light;
+    --surface-1: #fcfcfb; --text-primary: #0b0b0b; --text-secondary: #52514e; --text-muted: #898781;
+    --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,0.10);
+    --series-1: #2a78d6; /* the other 10 */
+    --series-2: #eb6834; /* the four */
+    --series-3: #1baf7a; /* Ashgrove + Halfmoon */
+    max-width: 860px; margin: 0 auto; padding: 20px 24px 16px; background: var(--surface-1);
+    border: 1px solid var(--border); border-radius: 12px; color: var(--text-primary);
+  }
+  @media (prefers-color-scheme: dark) {
+    body { background: #0d0d0d; }
+    .viz-root {
+      color-scheme: dark;
+      --surface-1: #1a1a19; --text-primary: #ffffff; --text-secondary: #c3c2b7; --text-muted: #898781;
+      --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+      --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70;
+    }
+  }
+  h1 { font-size: 18px; font-weight: 600; margin: 0 0 4px; }
+  h2 { font-size: 14px; font-weight: 600; margin: 18px 0 2px; }
+  .sub { font-size: 13px; color: var(--text-secondary); margin: 0 0 10px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; }
+  .legend span { display: inline-flex; align-items: center; gap: 8px; }
+  .legend i { display: inline-block; width: 18px; height: 0; border-top: 2px solid; }
+  .chart-wrap { position: relative; }
+  svg { width: 100%; height: auto; display: block; overflow: visible; }
+  svg text { font-family: inherit; }
+  .tick { fill: var(--text-muted); font-size: 12px; }
+  .lbl { font-size: 12px; fill: var(--text-secondary); }
+  .note { fill: var(--text-secondary); font-size: 12px; }
+  .tip {
+    position: absolute; pointer-events: none; display: none; min-width: 190px;
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12); padding: 8px 10px; font-size: 12px; color: var(--text-secondary);
+  }
+  .tip .d { margin-bottom: 4px; }
+  .tip .r { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+  .tip .k { width: 12px; height: 0; border-top: 2px solid; }
+  .tip b { color: var(--text-primary); font-size: 14px; margin-left: auto; }
+  .tip small { color: var(--text-muted); }
+  details { margin-top: 12px; font-size: 13px; color: var(--text-secondary); }
+  summary { cursor: pointer; }
+  table { border-collapse: collapse; margin-top: 8px; width: 100%; font-variant-numeric: tabular-nums; }
+  th, td { text-align: right; padding: 4px 8px; border-bottom: 1px solid var(--grid); }
+  th:first-child, td:first-child { text-align: left; }
+  .foot { font-size: 12px; color: var(--text-muted); margin-top: 10px; }
+</style>
+</head>
+<body>
+<div class="viz-root">
+  <h1>The four stopped answering, then stopped being pinged; the rest absorbed the load</h1>
+  <p class="sub">Rook Dispatch, 29 Jun – 6 Sep 2026, by week. 4.2 shipped on 12 Aug.</p>
+  <div class="legend">
+    <span><i style="border-color: var(--series-2)"></i>The four (Vesper, The Undertow, Meteor Mite, Farlight)</span>
+    <span><i style="border-color: var(--series-3)"></i>Corporal Ashgrove + Halfmoon</span>
+    <span><i style="border-color: var(--series-1)"></i>The other 10</span>
+  </div>
+
+  <h2>Pings per week</h2>
+  <div class="chart-wrap">
+    <svg id="c1" viewBox="0 0 820 300" role="img"
+         aria-label="Line chart of weekly pings. The four fall from 49 a week to 3 after 12 August. Ashgrove and Halfmoon slip from 21 to 15. The other 10 rise from 102 to 147."></svg>
+    <div class="tip" id="t1"></div>
+  </div>
+
+  <h2>Acceptance rate (share of pings taken)</h2>
+  <div class="chart-wrap">
+    <svg id="c2" viewBox="0 0 820 300" role="img"
+         aria-label="Line chart of weekly acceptance rate. The other 10 hold near 77 percent, dip to 58 percent in the week of 10 August and recover to 74 percent. Ashgrove and Halfmoon dip to 57 percent and end at 80 percent on 15 pings. The four fall from about 75 percent to 42, 19, then 0 percent on 6 and 3 pings."></svg>
+    <div class="tip" id="t2"></div>
+  </div>
+
+  <details>
+    <summary>Table view</summary>
+    <table id="tbl"><thead><tr>
+      <th>Week of</th><th>Four: pings</th><th>Four: taken</th><th>Four: acceptance</th>
+      <th>Ashgrove + Halfmoon: pings</th><th>taken</th><th>acceptance</th>
+      <th>Other 10: pings</th><th>taken</th><th>acceptance</th>
+    </tr></thead><tbody></tbody></table>
+  </details>
+  <p class="foot">Source: rook-database, table pings. The week of 10 Aug mixes two pre-release days (10–11 Aug) with five after, so its rate is a blend. Ashgrove + Halfmoon are two responders with 15–21 pings a week, so their rate moves a lot on one ping. The four's rates for 24 and 31 Aug rest on 6 and 3 pings, so read them as "almost no pings, none taken", not as a precise rate. Hover or tab to a week for values.</p>
+</div>
+
+<script>
+const weeks = ["29 Jun","6 Jul","13 Jul","20 Jul","27 Jul","3 Aug","10 Aug","17 Aug","24 Aug","31 Aug"];
+const D = {
+  four: {pings: [49,48,48,50,50,49,43,16,6,3],       taken: [36,37,36,37,40,37,18,3,0,0]},
+  two:  {pings: [21,21,21,21,21,21,21,17,15,15],       taken: [16,16,15,15,17,16,12,10,10,12]},
+  rest: {pings: [102,101,105,105,99,102,113,125,141,147], taken: [80,78,82,80,75,81,66,91,98,108]}
+};
+const pct = (g, i) => Math.round(1000 * D[g].taken[i] / D[g].pings[i]) / 10;
+const acc = {four: weeks.map((_, i) => pct("four", i)), two: weeks.map((_, i) => pct("two", i)), rest: weeks.map((_, i) => pct("rest", i))};
+
+const NS = "http://www.w3.org/2000/svg";
+const W = 820, H = 300, m = {l: 44, r: 190, t: 16, b: 34};
+const iw = W - m.l - m.r, ih = H - m.t - m.b;
+const x = i => m.l + i * iw / (weeks.length - 1);
+
+function panel(svgId, tipId, o) {
+  const svg = document.getElementById(svgId), tip = document.getElementById(tipId), wrap = svg.parentElement;
+  const y = v => m.t + ih - v / o.ymax * ih;
+  const el = (n, a) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); svg.appendChild(e); return e; };
+
+  for (let v = 0; v <= o.ymax; v += o.step) {
+    el("line", {x1: m.l, x2: m.l + iw, y1: y(v), y2: y(v), stroke: v === 0 ? "var(--axis)" : "var(--grid)", "stroke-width": 1});
+    el("text", {x: m.l - 8, y: y(v) + 4, "text-anchor": "end", class: "tick"}).textContent = v + o.unit;
+  }
+  weeks.forEach((w, i) => el("text", {x: x(i), y: H - 10, "text-anchor": "middle", class: "tick"}).textContent = w);
+
+  const rx = x(6) + (x(7) - x(6)) * 2 / 7;   // 12 Aug sits 2/7 into the week of 10 Aug
+  el("line", {x1: rx, x2: rx, y1: m.t, y2: m.t + ih, stroke: "var(--text-muted)", "stroke-width": 1, "stroke-dasharray": "4 4"});
+  el("text", {x: rx - 6, y: o.noteY, "text-anchor": "end", class: "note"}).textContent = "4.2 ships 12 Aug";
+
+  o.series.forEach(s => {
+    el("polyline", {points: s.data.map((v, i) => `${x(i)},${y(v)}`).join(" "), fill: "none", stroke: `var(${s.color})`, "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round"});
+    s.data.forEach((v, i) => el("circle", {cx: x(i), cy: y(v), r: 4, fill: `var(${s.color})`, stroke: "var(--surface-1)", "stroke-width": 2}));
+    const last = s.data.length - 1;
+    el("text", {x: x(last) + 12, y: y(s.data[last]) + 4, class: "lbl"}).textContent = `${s.name} · ${s.data[last]}${o.unit}`;
+    if (o.startLabels) el("text", {x: x(0), y: y(s.data[0]) + s.dy, "text-anchor": "middle", class: "lbl"}).textContent = s.data[0] + o.unit;
+  });
+
+  const cross = el("line", {y1: m.t, y2: m.t + ih, stroke: "var(--text-muted)", "stroke-width": 1, visibility: "hidden"});
+  function show(i) {
+    cross.setAttribute("x1", x(i)); cross.setAttribute("x2", x(i)); cross.setAttribute("visibility", "visible");
+    tip.replaceChildren();
+    const d = document.createElement("div"); d.className = "d";
+    d.textContent = "Week of " + weeks[i] + (i === 6 ? " (4.2 shipped 12 Aug)" : ""); tip.appendChild(d);
+    o.series.forEach(s => {
+      const r = document.createElement("div"); r.className = "r";
+      const k = document.createElement("span"); k.className = "k"; k.style.borderColor = `var(${s.color})`;
+      const n = document.createElement("span"); n.textContent = s.name;
+      const b = document.createElement("b"); b.textContent = s.data[i] + o.unit;
+      r.append(k, n, b); tip.appendChild(r);
+      if (o.detail) { const sm = document.createElement("small"); sm.textContent = o.detail(s.g, i); const w = document.createElement("div"); w.appendChild(sm); tip.appendChild(w); }
+    });
+    tip.style.display = "block";
+    const sx = x(i) / W * svg.clientWidth;
+    tip.style.left = (sx + 14 + tip.offsetWidth > wrap.clientWidth ? sx - 14 - tip.offsetWidth : sx + 14) + "px";
+    tip.style.top = "20px";
+  }
+  function hide() { cross.setAttribute("visibility", "hidden"); tip.style.display = "none"; }
+  weeks.forEach((w, i) => {
+    const bw = iw / (weeks.length - 1);
+    const r = el("rect", {x: x(i) - bw / 2, y: m.t, width: bw, height: ih, fill: "transparent", tabindex: 0,
+      "aria-label": `Week of ${w}: ` + o.series.map(s => `${s.name} ${s.data[i]}${o.unit}`).join(", ")});
+    r.addEventListener("pointermove", () => show(i));
+    r.addEventListener("focus", () => show(i));
+    r.addEventListener("pointerleave", hide);
+    r.addEventListener("blur", hide);
+  });
+}
+
+panel("c1", "t1", {ymax: 180, step: 30, unit: "", noteY: m.t + 12, startLabels: false,
+  series: [
+    {name: "The four", data: D.four.pings, color: "--series-2"},
+    {name: "Ashgrove + Halfmoon", data: D.two.pings, color: "--series-3"},
+    {name: "The other 10", data: D.rest.pings, color: "--series-1"}
+  ]});
+
+panel("c2", "t2", {ymax: 100, step: 25, unit: "%", noteY: m.t + ih - 8, startLabels: false,
+  series: [
+    {name: "The four", g: "four", data: acc.four, color: "--series-2"},
+    {name: "Ashgrove + Halfmoon", g: "two", data: acc.two, color: "--series-3"},
+    {name: "The other 10", g: "rest", data: acc.rest, color: "--series-1"}
+  ],
+  detail: (g, i) => `${D[g].taken[i]} taken of ${D[g].pings[i]} pings`});
+
+const tb = document.querySelector("#tbl tbody");
+weeks.forEach((w, i) => {
+  const tr = document.createElement("tr");
+  [w, D.four.pings[i], D.four.taken[i], acc.four[i] + "%", D.two.pings[i], D.two.taken[i], acc.two[i] + "%", D.rest.pings[i], D.rest.taken[i], acc.rest[i] + "%"]
+    .forEach(v => { const td = document.createElement("td"); td.textContent = v; tr.appendChild(td); });
+  tb.appendChild(tr);
+});
+</script>
+</body>
+</html>
