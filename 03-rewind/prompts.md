@@ -149,3 +149,11 @@ Please provide a pdf version of the proposal
 ### 34.
 
 include the flow diagram
+
+### 35.
+
+Reviewing the code and the ping table, I have a question from Marcus that I need clarification on - did the change to who gets asked first apply to responders who'd already been turning jobs down, or just new ones?
+
+### 36.
+
+Draft reply to Marcus please with this info
