@@ -66,3 +66,19 @@ Please add a replay of the live score as a line chart for all ten against Farlig
 ### 13.
 
 Provide a quick executive summary of the findings
+
+### 14.
+
+Please chart tickets against missed pings by day.
+
+### 15.
+
+Please split the ticket bars into “gone too fast”, “quiet” and everything else
+
+### 16.
+
+PM before me mentioned this is just August being quiet. Could we validate if that statement is accurate based on what we have found in the data
+
+### 17.
+
+Please add the callout and unfilled-callout trend to a chart
