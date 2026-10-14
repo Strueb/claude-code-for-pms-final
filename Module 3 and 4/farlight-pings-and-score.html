@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Farlight: weekly pings and replayed score</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { margin: 0; padding: 24px; background: #f9f9f7; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .viz-root {
+    color-scheme: light;
+    --surface-1: #fcfcfb; --text-primary: #0b0b0b; --text-secondary: #52514e; --text-muted: #898781;
+    --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,0.10);
+    --series-1: #2a78d6;   /* taken */
+    --series-2: #eb6834;   /* missed */
+    --series-3: #1baf7a;   /* turned down */
+    max-width: 860px; margin: 0 auto; padding: 20px 24px 16px; background: var(--surface-1);
+    border: 1px solid var(--border); border-radius: 12px; color: var(--text-primary);
+  }
+  @media (prefers-color-scheme: dark) {
+    body { background: #0d0d0d; }
+    .viz-root {
+      color-scheme: dark;
+      --surface-1: #1a1a19; --text-primary: #ffffff; --text-secondary: #c3c2b7; --text-muted: #898781;
+      --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+      --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70;
+    }
+  }
+  h1 { font-size: 18px; font-weight: 600; margin: 0 0 4px; }
+  .sub { font-size: 13px; color: var(--text-secondary); margin: 0 0 10px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; }
+  .legend span { display: inline-flex; align-items: center; gap: 8px; }
+  .legend b { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
+  .legend i { display: inline-block; width: 18px; height: 0; border-top: 2px solid; }
+  .legend u { display: inline-block; width: 10px; height: 10px; border-radius: 50%; text-decoration: none; }
+  .legend svg { width: 12px; height: 12px; display: inline-block; flex: none; }
+  .chart-wrap { position: relative; }
+  svg { width: 100%; height: auto; display: block; overflow: visible; }
+  svg text { font-family: inherit; }
+  .tick { fill: var(--text-muted); font-size: 12px; }
+  .lbl { font-size: 12px; fill: var(--text-secondary); }
+  .ptitle { font-size: 13px; font-weight: 600; fill: var(--text-primary); }
+  .tip {
+    position: absolute; pointer-events: none; display: none; min-width: 220px;
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12); padding: 8px 10px; font-size: 12px; color: var(--text-secondary);
+  }
+  .tip .d { margin-bottom: 4px; }
+  .tip .r { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+  .tip .k { width: 12px; height: 0; border-top: 2px solid; }
+  .tip b { color: var(--text-primary); font-size: 14px; margin-left: auto; }
+  .tip small { color: var(--text-muted); }
+  details { margin-top: 12px; font-size: 13px; color: var(--text-secondary); }
+  summary { cursor: pointer; }
+  .scroll { max-height: 260px; overflow: auto; margin-top: 8px; }
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; font-size: 12px; }
+  th, td { text-align: right; padding: 3px 8px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  th { position: sticky; top: 0; background: var(--surface-1); }
+  .foot { font-size: 12px; color: var(--text-muted); margin-top: 10px; }
+</style>
+</head>
+<body>
+<div class="viz-root">
+  <h1>Farlight: a run of misses on 12–14 Aug, then the pings stopped, and tickets about the silence started 3 days later</h1>
+  <p class="sub">Weekly pings (top) and replayed recent-acceptance score at the end of each day (bottom), 29 Jun – 6 Sep 2026. 4.2 shipped on 12 Aug.</p>
+  <div class="legend">
+    <span><b style="background: var(--series-1)"></b>Taken</span>
+    <span><b style="background: var(--series-3)"></b>Turned down</span>
+    <span><b style="background: var(--series-2)"></b>Missed</span>
+    <span><i style="border-color: var(--text-secondary)"></i>Replayed score (0–1)</span>
+    <span><u style="background: var(--series-2)"></u>Day with a missed ping</span>
+    <span><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1 L11 6 L6 11 L1 6 Z" fill="var(--text-primary)"/></svg>Ticket: Farlight is quiet</span>
+    <span><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1 L11 6 L6 11 L1 6 Z" fill="var(--series-2)"/></svg>Ticket: a missed ping</span>
+    <span><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.5 L10.5 6 L6 10.5 L1.5 6 Z" fill="none" stroke="var(--text-muted)" stroke-width="1.5"/></svg>Ticket: something else</span>
+  </div>
+  <div class="chart-wrap">
+    <svg id="c" viewBox="0 0 820 500" role="img"
+         aria-label="Two stacked charts for Farlight. Top: pings per week, about 12 a week with 8 to 10 taken until the week of 3 August, then 10 in the week of 10 August with 4 taken and 4 missed, 3 in the week of 17 August, 1 in the week of 24 August and none in the week of 31 August. Bottom: the replayed score is near 0.9 until 11 August, falls to 0.44 on 13 August, about 0.3 by 19 August and reaches 0 on 28 August, staying there. A row of markers above the score shows 19 tickets about Farlight: three unrelated ones before the release, then from 17 August ten tickets saying Farlight is quiet, one about a missed ping and five unrelated."></svg>
+    <div class="tip" id="t"></div>
+  </div>
+  <details>
+    <summary>Table view</summary>
+    <div class="scroll"><table id="tbl"><thead><tr><th>Week of</th><th>Pings</th><th>Taken</th><th>Turned down</th><th>Missed</th><th>Score, end of week</th></tr></thead><tbody></tbody></table></div>
+    <div class="scroll"><table id="tkt"><thead><tr><th>Filed</th><th>Ticket</th><th>Kind</th><th>Subject</th></tr></thead><tbody></tbody></table></div>
+  </details>
+  <p class="foot">Source: rook-database, table pings. The week of 10 Aug has three pre-release pings (10 Aug) and seven after (12–14 Aug). The score is a replay, not the live value, which is not in the database: Farlight's pings were run in time order through the rules in history.py (taken +0.08; turned down or missed -0.12; kept between 0 and 1), starting from 0.5 on 29 Jun. A score changes only when Farlight is pinged, so a flat line means no pings. The misses began while the score was still high, so the score alone did not start them. This shows what happened to the pings, not why. The diamonds are the 19 tickets about Farlight, placed on the day filed and read from the ticket text: 10 say Farlight is quiet, 1 is about a missed ping, 8 are about other things (gear, filters, access). Hover or tab to a day for values and ticket subjects.</p>
+</div>
+
+<script>
+const START = Date.UTC(2026, 5, 29);
+const score = "0.50,0.46,0.54,0.70,0.78,0.86,0.86,0.94,1.00,0.96,0.84,0.84,1.00,1.00,0.88,0.88,1.00,1.00,0.88,1.00,1.00,1.00,1.00,0.96,0.88,0.92,1.00,1.00,1.00,0.88,0.96,1.00,1.00,0.88,1.00,0.88,0.96,1.00,1.00,0.96,0.80,0.80,0.84,0.84,0.68,0.44,0.40,0.40,0.40,0.40,0.40,0.28,0.28,0.28,0.16,0.04,0.04,0.04,0.04,0.04,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00".split(",").map(Number);
+const N = score.length;                                       // 70 days = 10 weeks
+const pings   = [12,12,11,12,13,12,10,3,1,0];
+const taken   = [ 9, 9, 8, 9,10, 8, 4,0,0,0];
+const decl    = [ 3, 3, 2, 2, 3, 3, 2,1,0,0];
+const missedW = [ 0, 0, 1, 1, 0, 1, 4,2,1,0];
+const WK = pings.length;
+if (N !== 70 || WK * 7 !== N || pings.some((p, k) => p !== taken[k] + decl[k] + missedW[k]) || pings.reduce((a, b) => a + b) !== 86) throw new Error("data check failed");
+const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep"];
+const dayLabel = i => { const d = new Date(START + i * 864e5); return d.getUTCDate() + " " + MON[d.getUTCMonth()]; };
+const dayIndex = md => Math.round((Date.UTC(2026, +md.slice(0, 2) - 1, +md.slice(3)) - START) / 864e5);
+const RELEASE = dayIndex("08-12");
+const MISS_DAYS = ["08-12","08-13","08-14","08-19","08-23","08-28"].map(dayIndex);
+const LAST_TAKEN = dayIndex("08-14");
+
+const NS = "http://www.w3.org/2000/svg";
+const W = 820, H = 500, m = {l: 44, r: 20, t: 8, b: 34};
+const panelH = 170, gap = 82;
+const iw = W - m.l - m.r;
+const xs = d => m.l + d * iw / N;           // x at the left edge of day d
+const xc = i => xs(i + 0.5);                // centre of day i
+const svg = document.getElementById("c"), tip = document.getElementById("t"), wrap = svg.parentElement;
+const el = (n, a) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); svg.appendChild(e); return e; };
+
+function frame(top, title, ymax, step, fmt, titleDy = 2) {
+  const y = v => top + panelH - v / ymax * panelH;
+  el("text", {x: m.l, y: top - titleDy, class: "ptitle"}).textContent = title;
+  for (let v = 0; v <= ymax; v += step) {
+    el("line", {x1: m.l, x2: m.l + iw, y1: y(v), y2: y(v), stroke: v === 0 ? "var(--axis)" : "var(--grid)", "stroke-width": 1});
+    el("text", {x: m.l - 8, y: y(v) + 4, "text-anchor": "end", class: "tick"}).textContent = fmt(v);
+  }
+  el("line", {x1: xs(RELEASE + 0.0), x2: xs(RELEASE + 0.0), y1: top, y2: top + panelH, stroke: "var(--text-muted)", "stroke-width": 1, "stroke-dasharray": "4 4"});
+  return y;
+}
+const top1 = m.t + 14, top2 = top1 + panelH + gap;
+
+// panel 1: weekly pings, stacked by outcome
+const y1 = frame(top1, "Pings per week, by outcome", 15, 5, v => v);
+for (let k = 0; k < WK; k++) {
+  let base = y1(0);
+  [[taken[k], "--series-1"], [decl[k], "--series-3"], [missedW[k], "--series-2"]].forEach(([n, c]) => {
+    if (n <= 0) return;
+    const h = n / 15 * panelH;
+    el("rect", {x: xs(7 * k) + 4, y: base - h + 1, width: xs(7 * k + 7) - xs(7 * k) - 8, height: Math.max(1, h - 2), fill: `var(${c})`, rx: 2});
+    base -= h;
+  });
+  el("text", {x: (xs(7 * k) + xs(7 * k + 7)) / 2, y: y1(pings[k]) - 6, "text-anchor": "middle", class: "lbl"}).textContent = pings[k];
+}
+el("text", {x: xs(RELEASE) - 6, y: top1 + 12, "text-anchor": "end", class: "lbl"}).textContent = "4.2 ships 12 Aug";
+
+// panel 2: replayed score
+const y2 = frame(top2, "Replayed score, end of each day, with tickets about Farlight above", 1, 0.25, v => v === 0 ? "0" : v === 1 ? "1" : v.toFixed(2), 32);
+
+// tickets about Farlight [ticket number, date filed, kind, subject]; kind: q = Farlight is quiet, m = a missed ping, o = something else
+const TICKETS = [
+  [3006,"07-05","o","Bulk callout — how does it work?"], [3021,"07-20","o","Vest plate replacement"], [3027,"07-28","o","Cold-weather gloves wearing through"],
+  [3049,"08-14","o","Password reset email slow"], [3060,"08-17","q","Farlight's phone has not gone off in 3 days"], [3066,"08-19","o","Saved filters — how do I clear them?"],
+  [3071,"08-20","q","Hardly anything for Farlight this week"], [3081,"08-22","q","Farlight much quieter than usual"], [3084,"08-23","o","Responder detail panel covers the map"],
+  [3089,"08-24","q","Still very quiet for Farlight"], [3099,"08-26","q","Nothing coming through for Farlight"], [3103,"08-28","q","Is Farlight still on the list?"],
+  [3107,"08-28","o","Console logs me out too often"], [3110,"08-29","m","First one in 5 days and she missed it"], [3114,"08-30","q","Hardly anything for Farlight this week"],
+  [3120,"09-01","q","Farlight asked me to pass this on"], [3126,"09-02","o","Maintenance reminder came after the date"], [3130,"09-03","q","Farlight's phone has not gone off in 6 days"],
+  [3139,"09-05","q","Nothing coming through for Farlight"]
+];
+if (TICKETS.length !== 19) throw new Error("ticket count");
+const ticketsOn = i => TICKETS.filter(t => dayIndex(t[1]) === i);
+const stripY = top2 - 14;
+el("line", {x1: m.l, x2: m.l + iw, y1: stripY + 12, y2: stripY + 12, stroke: "var(--grid)", "stroke-width": 1});
+const seen = {};
+TICKETS.forEach(([n, d, kind]) => {
+  const i = dayIndex(d); const k = seen[i] = (seen[i] || 0) + 1;
+  const cx = xc(i) + (ticketsOn(i).length > 1 ? (k - 1.5) * 9 : 0), cy = stripY;
+  const path = `M${cx} ${cy - 6} L${cx + 6} ${cy} L${cx} ${cy + 6} L${cx - 6} ${cy} Z`;
+  if (kind === "o") el("path", {d: path, fill: "var(--surface-1)", stroke: "var(--text-muted)", "stroke-width": 1.5});
+  else el("path", {d: path, fill: kind === "m" ? "var(--series-2)" : "var(--text-primary)", stroke: "var(--surface-1)", "stroke-width": 1.5});
+});
+el("polyline", {points: score.map((v, i) => `${xc(i)},${y2(v)}`).join(" "), fill: "none", stroke: "var(--text-secondary)", "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round"});
+MISS_DAYS.forEach(i => el("circle", {cx: xc(i), cy: y2(score[i]), r: 4.5, fill: "var(--series-2)", stroke: "var(--surface-1)", "stroke-width": 2}));
+el("circle", {cx: xc(LAST_TAKEN), cy: y2(score[LAST_TAKEN]), r: 4.5, fill: "var(--series-1)", stroke: "var(--surface-1)", "stroke-width": 2});
+el("text", {x: xc(LAST_TAKEN) + 10, y: y2(score[LAST_TAKEN]) - 10, class: "lbl"}).textContent = "Last ping taken, 14 Aug";
+el("text", {x: xs(N) - 4, y: y2(0.14), "text-anchor": "end", class: "lbl"}).textContent = "Zero from 28 Aug (last ping)";
+for (let k = 0; k < WK; k++) el("text", {x: xs(7 * k), y: top2 + panelH + 20, "text-anchor": "middle", class: "tick"}).textContent = dayLabel(7 * k);
+
+// hover: one crosshair over both panels
+const cross = el("line", {y1: top1, y2: top2 + panelH, stroke: "var(--text-muted)", "stroke-width": 1, visibility: "hidden"});
+function row(color, name, val) {
+  const r = document.createElement("div"); r.className = "r";
+  const k = document.createElement("span"); k.className = "k"; k.style.borderColor = color;
+  const n = document.createElement("span"); n.textContent = name;
+  const b = document.createElement("b"); b.textContent = val;
+  r.append(k, n, b); tip.appendChild(r);
+}
+function show(i) {
+  const k = Math.floor(i / 7);
+  cross.setAttribute("x1", xc(i)); cross.setAttribute("x2", xc(i)); cross.setAttribute("visibility", "visible");
+  tip.replaceChildren();
+  const d = document.createElement("div"); d.className = "d";
+  d.textContent = dayLabel(i) + (i === RELEASE ? " (4.2 shipped)" : ""); tip.appendChild(d);
+  row("var(--text-secondary)", "Replayed score", score[i].toFixed(2));
+  const w = document.createElement("div"); w.className = "d"; w.style.marginTop = "6px";
+  w.textContent = "Week of " + dayLabel(7 * k) + (k === 6 ? " (3 pings before, 7 after the release)" : ""); tip.appendChild(w);
+  row("var(--series-1)", "Taken", taken[k]);
+  row("var(--series-3)", "Turned down", decl[k]);
+  row("var(--series-2)", "Missed", missedW[k]);
+  ticketsOn(i).forEach(([n, , kind, subj]) => {
+    const t = document.createElement("div"); t.className = "d"; t.style.marginTop = "6px";
+    t.textContent = `Ticket #${n} (${kind === "q" ? "quiet" : kind === "m" ? "missed ping" : "other"}): ${subj}`; tip.appendChild(t);
+  });
+  tip.style.display = "block";
+  const sx = xc(i) / W * svg.clientWidth;
+  tip.style.left = (sx + 14 + tip.offsetWidth > wrap.clientWidth ? sx - 14 - tip.offsetWidth : sx + 14) + "px";
+  tip.style.top = "30px";
+}
+function hide() { cross.setAttribute("visibility", "hidden"); tip.style.display = "none"; }
+for (let i = 0; i < N; i++) {
+  const r = el("rect", {x: xs(i), y: top1, width: xs(i + 1) - xs(i), height: top2 + panelH - top1, fill: "transparent", tabindex: i % 7 === 0 ? 0 : -1,
+    "aria-label": `${dayLabel(i)}: replayed score ${score[i].toFixed(2)}; week of ${dayLabel(7 * Math.floor(i / 7))}: ${pings[Math.floor(i / 7)]} pings, ${taken[Math.floor(i / 7)]} taken, ${missedW[Math.floor(i / 7)]} missed` + (ticketsOn(i).length ? `; ${ticketsOn(i).length} ticket(s): ` + ticketsOn(i).map(t => t[3]).join("; ") : "")});
+  r.addEventListener("pointermove", () => show(i));
+  r.addEventListener("focus", () => show(i));
+  r.addEventListener("pointerleave", hide);
+  r.addEventListener("blur", hide);
+}
+
+const tb = document.querySelector("#tkt tbody");
+TICKETS.forEach(([n, d, kind, subj]) => {
+  const tr = document.createElement("tr");
+  [dayLabel(dayIndex(d)), "#" + n, kind === "q" ? "quiet" : kind === "m" ? "missed ping" : "other", subj].forEach((t, j) => { const td = document.createElement("td"); td.textContent = t; if (j === 3) td.style.textAlign = "left"; tr.appendChild(td); });
+  tb.appendChild(tr);
+});
+const body = document.querySelector("#tbl tbody");
+for (let k = 0; k < WK; k++) {
+  const tr = document.createElement("tr");
+  [dayLabel(7 * k), pings[k], taken[k], decl[k], missedW[k], score[7 * k + 6].toFixed(2)].forEach(t => { const td = document.createElement("td"); td.textContent = t; tr.appendChild(td); });
+  body.appendChild(tr);
+}
+</script>
+</body>
+</html>
