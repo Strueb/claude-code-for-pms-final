@@ -17,6 +17,32 @@ prompt library built from your own questions.
 
 ### 1.
 
+Create a new folder under claude-code-for-pms-final named Module 3 and 4 please
+
 ### 2.
 
+Break down by responder please
+
 ### 3.
+
+Please show pings by responders week by week
+
+### 4.
+
+Create a chart for the four vs the rest please
+
+### 5.
+
+Add acceptance rates for the same two groups on a second panel please
+
+### 6.
+
+Check whether Ashgrove and Halfmoon share the same pattern please
+
+### 7.
+
+Add them as a third line
+
+### 8.
+
+Copy the Chart into x-ray vision 04 please
