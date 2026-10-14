@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Replayed recent-acceptance score: ten responders vs Farlight</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { margin: 0; padding: 24px; background: #f9f9f7; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .viz-root {
+    color-scheme: light;
+    --surface-1: #fcfcfb; --text-primary: #0b0b0b; --text-secondary: #52514e; --text-muted: #898781;
+    --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,0.10);
+    --series-2: #eb6834;   /* Farlight */
+    --context: #898781;    /* the other ten, recessive */
+    max-width: 860px; margin: 0 auto; padding: 20px 24px 16px; background: var(--surface-1);
+    border: 1px solid var(--border); border-radius: 12px; color: var(--text-primary);
+  }
+  @media (prefers-color-scheme: dark) {
+    body { background: #0d0d0d; }
+    .viz-root {
+      color-scheme: dark;
+      --surface-1: #1a1a19; --text-primary: #ffffff; --text-secondary: #c3c2b7; --text-muted: #898781;
+      --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+      --series-2: #d95926; --context: #898781;
+    }
+  }
+  h1 { font-size: 18px; font-weight: 600; margin: 0 0 4px; }
+  .sub { font-size: 13px; color: var(--text-secondary); margin: 0 0 10px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; }
+  .legend span { display: inline-flex; align-items: center; gap: 8px; }
+  .legend i { display: inline-block; width: 18px; height: 0; border-top: 2px solid; }
+  .chart-wrap { position: relative; }
+  svg { width: 100%; height: auto; display: block; overflow: visible; }
+  svg text { font-family: inherit; }
+  .tick { fill: var(--text-muted); font-size: 12px; }
+  .lbl { font-size: 12px; fill: var(--text-secondary); }
+  .tip {
+    position: absolute; pointer-events: none; display: none; min-width: 210px;
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12); padding: 8px 10px; font-size: 12px; color: var(--text-secondary);
+  }
+  .tip .d { margin-bottom: 4px; }
+  .tip .r { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+  .tip .k { width: 12px; height: 0; border-top: 2px solid; }
+  .tip b { color: var(--text-primary); font-size: 13px; margin-left: auto; font-variant-numeric: tabular-nums; }
+  details { margin-top: 12px; font-size: 13px; color: var(--text-secondary); }
+  summary { cursor: pointer; }
+  .scroll { max-height: 260px; overflow: auto; margin-top: 8px; }
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; font-size: 12px; }
+  th, td { text-align: right; padding: 3px 6px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  th { position: sticky; top: 0; background: var(--surface-1); }
+  .foot { font-size: 12px; color: var(--text-muted); margin-top: 10px; }
+</style>
+</head>
+<body>
+<div class="viz-root">
+  <h1>Farlight's score fell to zero and stayed there; the other ten dipped and recovered</h1>
+  <p class="sub">Replayed recent-acceptance score (0–1), end of each day, 29 Jun – 6 Sep 2026. 4.2 shipped on 12 Aug.</p>
+  <div class="legend">
+    <span><i style="border-color: var(--series-2); border-top-width: 3px"></i>Farlight</span>
+    <span><i style="border-color: var(--context)"></i>The other ten (Captain Vantage, Cindermark, Ironvale, Nightwell, Sgt. Bulwark, Sgt. Falkirk, Stormwrack, The Drift, The Gale, The Longcast)</span>
+  </div>
+  <div class="chart-wrap">
+    <svg id="c" viewBox="0 0 820 380" role="img"
+         aria-label="Line chart of replayed recent-acceptance score by day. Farlight falls from about 0.9 in early August to 0 by 28 August and stays there. The other ten dip after 12 August, the lowest end-of-day value being about 0.4, and are back between 0.7 and 1.0 by 6 September."></svg>
+    <div class="tip" id="t"></div>
+  </div>
+  <details>
+    <summary>Table view (every day)</summary>
+    <div class="scroll"><table id="tbl"><thead></thead><tbody></tbody></table></div>
+  </details>
+  <p class="foot">This is a replay, not the live scores, which are not in the database. Each responder's pings were run in time order through the rules in history.py (taken +0.08; turned down or missed -0.12; kept between 0 and 1), starting from 0.5 on 29 Jun. A score changes only when that responder is pinged, so a flat line means no pings. Day values are end of day; scores can dip lower within a day (Nightwell reached 0.28 on 18 Aug). Hover or tab to a day for all eleven values.</p>
+</div>
+
+<script>
+const START = Date.UTC(2026, 5, 29);
+const names = ["Farlight","Captain Vantage","Cindermark","Ironvale","Nightwell","Sgt. Bulwark","Sgt. Falkirk","Stormwrack","The Drift","The Gale","The Longcast"];
+const raw = {
+"Farlight":"0.50,0.46,0.54,0.70,0.78,0.86,0.86,0.94,1.00,0.96,0.84,0.84,1.00,1.00,0.88,0.88,1.00,1.00,0.88,1.00,1.00,1.00,1.00,0.96,0.88,0.92,1.00,1.00,1.00,0.88,0.96,1.00,1.00,0.88,1.00,0.88,0.96,1.00,1.00,0.96,0.80,0.80,0.84,0.84,0.68,0.44,0.40,0.40,0.40,0.40,0.40,0.28,0.28,0.28,0.16,0.04,0.04,0.04,0.04,0.04,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00",
+"Captain Vantage":"0.58,0.70,0.74,0.74,0.90,0.98,1.00,1.00,0.88,0.84,1.00,1.00,0.88,0.96,1.00,1.00,0.96,0.72,0.80,0.80,0.92,1.00,0.76,1.00,1.00,0.76,0.84,1.00,1.00,1.00,1.00,1.00,0.88,0.84,0.88,0.84,0.92,1.00,1.00,0.96,0.96,0.84,0.80,0.96,0.72,0.68,0.84,0.84,0.88,0.96,1.00,0.96,0.88,1.00,0.88,0.96,1.00,0.88,0.88,0.88,0.96,1.00,0.88,0.96,0.88,1.00,0.88,0.88,1.00,0.92",
+"Cindermark":"0.50,0.58,0.42,0.58,0.66,0.82,0.82,0.90,1.00,1.00,1.00,1.00,1.00,0.96,1.00,1.00,1.00,1.00,0.88,0.76,0.92,1.00,0.88,0.96,0.96,0.96,1.00,0.88,1.00,1.00,1.00,1.00,1.00,0.88,0.84,0.92,1.00,1.00,1.00,1.00,0.96,1.00,1.00,0.96,0.92,0.80,0.96,0.84,0.92,1.00,1.00,1.00,1.00,0.88,0.84,0.80,0.88,0.92,1.00,0.96,0.88,0.76,0.92,0.76,0.76,0.84,1.00,1.00,1.00,0.96",
+"Ironvale":"0.46,0.54,0.54,0.70,0.78,0.86,0.74,0.82,0.78,0.66,0.54,0.54,0.54,0.78,0.86,0.82,0.98,0.98,1.00,1.00,1.00,1.00,1.00,0.88,0.88,0.84,1.00,1.00,0.96,1.00,1.00,1.00,0.88,0.88,1.00,1.00,1.00,1.00,1.00,1.00,1.00,0.96,1.00,1.00,0.88,0.88,0.72,0.80,0.80,0.88,0.88,0.64,0.52,0.60,0.60,0.76,0.84,1.00,0.76,0.76,1.00,1.00,1.00,1.00,1.00,1.00,1.00,0.76,0.72,0.72",
+"Nightwell":"0.50,0.54,0.86,0.82,0.90,0.86,0.90,0.88,0.76,0.88,0.88,0.76,1.00,1.00,1.00,1.00,1.00,1.00,1.00,1.00,1.00,0.88,1.00,1.00,0.96,0.72,0.88,0.88,1.00,1.00,0.96,1.00,0.88,0.92,1.00,1.00,1.00,0.96,1.00,1.00,0.96,0.96,1.00,0.96,1.00,1.00,0.88,0.72,0.44,0.40,0.44,0.60,0.56,0.80,1.00,1.00,1.00,1.00,1.00,0.84,0.76,0.76,0.72,0.80,0.72,0.56,0.80,0.92,1.00,0.88",
+"Sgt. Bulwark":"0.58,0.54,0.78,0.86,0.74,0.74,0.82,0.98,1.00,1.00,1.00,0.88,0.92,1.00,1.00,0.96,0.96,1.00,1.00,1.00,1.00,1.00,1.00,1.00,0.96,0.88,0.96,1.00,1.00,0.88,0.92,0.88,0.88,1.00,1.00,1.00,1.00,1.00,1.00,1.00,0.76,0.76,0.64,0.80,0.80,0.80,0.76,0.60,0.56,0.64,0.68,0.84,0.92,0.96,0.96,0.96,0.96,0.92,0.92,0.76,0.84,0.80,1.00,0.84,0.92,0.92,1.00,0.96,1.00,1.00",
+"Sgt. Falkirk":"0.66,0.82,0.82,0.90,0.98,0.88,1.00,1.00,1.00,1.00,1.00,1.00,1.00,1.00,1.00,1.00,0.88,0.64,0.80,1.00,1.00,0.96,0.96,0.88,0.96,1.00,1.00,1.00,1.00,0.96,1.00,1.00,1.00,1.00,1.00,1.00,1.00,0.84,0.92,1.00,1.00,1.00,1.00,1.00,0.96,0.84,0.92,1.00,1.00,1.00,1.00,0.96,0.96,0.92,0.92,0.88,0.84,0.72,0.96,1.00,1.00,0.88,1.00,1.00,0.96,0.88,0.84,0.92,1.00,0.76",
+"Stormwrack":"0.58,0.58,0.66,0.90,1.00,0.76,0.84,0.92,1.00,1.00,0.88,0.84,1.00,1.00,1.00,1.00,1.00,0.88,0.72,0.80,0.96,0.84,0.80,0.80,0.96,1.00,1.00,1.00,1.00,0.84,0.72,0.72,0.80,1.00,1.00,0.96,0.96,1.00,1.00,0.96,1.00,0.96,1.00,0.88,0.76,0.64,0.52,0.56,0.56,0.52,0.56,0.72,0.88,0.80,0.80,1.00,0.84,0.68,0.76,0.84,0.88,1.00,1.00,1.00,1.00,0.96,1.00,0.96,1.00,0.76",
+"The Drift":"0.66,0.74,0.74,0.74,0.74,0.70,0.78,0.66,0.90,0.98,1.00,1.00,1.00,1.00,0.96,0.96,0.96,0.96,1.00,1.00,1.00,1.00,1.00,1.00,0.96,0.96,1.00,1.00,1.00,1.00,1.00,1.00,1.00,1.00,0.88,0.88,0.88,0.76,0.84,1.00,1.00,1.00,1.00,1.00,0.96,0.96,0.96,0.72,0.80,0.88,0.88,1.00,0.96,1.00,0.88,0.88,1.00,1.00,1.00,1.00,1.00,0.88,0.84,0.84,1.00,0.88,0.88,0.88,0.88,0.84",
+"The Gale":"0.82,0.70,0.78,0.86,1.00,0.88,0.84,0.88,0.84,0.80,0.80,0.80,0.88,1.00,0.88,0.96,0.92,1.00,0.88,0.96,0.96,0.96,0.92,0.96,1.00,1.00,1.00,1.00,1.00,1.00,1.00,1.00,1.00,1.00,0.84,0.88,1.00,1.00,0.76,0.76,0.76,1.00,1.00,0.96,0.84,0.80,0.92,0.80,0.84,1.00,0.88,0.76,0.64,0.80,0.84,1.00,0.76,0.80,0.96,0.96,1.00,1.00,1.00,0.76,0.88,0.96,0.88,1.00,0.96,0.96",
+"The Longcast":"0.38,0.38,0.38,0.46,0.58,0.58,0.66,0.70,0.78,0.78,0.78,0.78,0.86,0.82,0.90,0.98,1.00,1.00,1.00,0.88,0.96,0.84,0.84,0.92,1.00,1.00,1.00,0.88,1.00,1.00,0.96,1.00,1.00,1.00,0.88,0.88,0.96,0.80,0.88,0.96,0.96,1.00,1.00,1.00,1.00,1.00,0.96,0.72,0.72,0.80,0.80,0.88,0.88,0.92,0.88,0.96,0.60,0.76,0.76,0.76,0.76,0.84,0.88,0.76,0.84,0.84,0.92,1.00,1.00,0.96"
+};
+const S = {}; names.forEach(n => S[n] = raw[n].split(",").map(Number));
+const N = S["Farlight"].length;           // 70 days
+names.forEach(n => { if (S[n].length !== N) throw new Error("length mismatch: " + n); });
+const dayLabel = i => { const d = new Date(START + i * 864e5); return d.getUTCDate() + " " + ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep"][d.getUTCMonth()]; };
+const RELEASE = Math.round((Date.UTC(2026, 7, 12) - START) / 864e5);   // 12 Aug
+
+const NS = "http://www.w3.org/2000/svg";
+const W = 820, H = 380, m = {l: 44, r: 90, t: 16, b: 34};
+const iw = W - m.l - m.r, ih = H - m.t - m.b;
+const x = i => m.l + i * iw / (N - 1);
+const y = v => m.t + ih - v * ih;
+const svg = document.getElementById("c"), tip = document.getElementById("t"), wrap = svg.parentElement;
+const el = (n, a) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); svg.appendChild(e); return e; };
+
+[0, 0.25, 0.5, 0.75, 1].forEach(v => {
+  el("line", {x1: m.l, x2: m.l + iw, y1: y(v), y2: y(v), stroke: v === 0 ? "var(--axis)" : "var(--grid)", "stroke-width": 1});
+  el("text", {x: m.l - 8, y: y(v) + 4, "text-anchor": "end", class: "tick"}).textContent = v.toFixed(2);
+});
+for (let i = 0; i < N; i += 7) el("text", {x: x(i), y: H - 10, "text-anchor": "middle", class: "tick"}).textContent = dayLabel(i);
+
+el("line", {x1: x(RELEASE), x2: x(RELEASE), y1: m.t, y2: m.t + ih, stroke: "var(--text-muted)", "stroke-width": 1, "stroke-dasharray": "4 4"});
+el("text", {x: x(RELEASE) - 6, y: m.t + ih - 8, "text-anchor": "end", class: "lbl"}).textContent = "4.2 ships 12 Aug";
+
+const path = d => d.map((v, i) => `${x(i)},${y(v)}`).join(" ");
+// the ten: thin, recessive, drawn first
+names.slice(1).forEach(n => el("polyline", {points: path(S[n]), fill: "none", stroke: "var(--context)", "stroke-opacity": 0.6, "stroke-width": 1.5, "stroke-linejoin": "round"}));
+// Farlight on top
+el("polyline", {points: path(S["Farlight"]), fill: "none", stroke: "var(--series-2)", "stroke-width": 3, "stroke-linejoin": "round", "stroke-linecap": "round"});
+el("circle", {cx: x(N - 1), cy: y(S["Farlight"][N - 1]), r: 4, fill: "var(--series-2)", stroke: "var(--surface-1)", "stroke-width": 2});
+el("text", {x: x(N - 1) + 12, y: y(S["Farlight"][N - 1]) - 4, class: "lbl"}).textContent = "Farlight · " + S["Farlight"][N - 1].toFixed(2);
+
+// annotate the ten's lowest end-of-day value since the release
+let low = {v: 9, n: "", i: 0};
+names.slice(1).forEach(n => S[n].forEach((v, i) => { if (i >= RELEASE && v < low.v) low = {v, n, i}; }));
+el("circle", {cx: x(low.i), cy: y(low.v), r: 4, fill: "var(--context)", stroke: "var(--surface-1)", "stroke-width": 2});
+el("text", {x: x(low.i) + 10, y: y(low.v) + 16, class: "lbl"}).textContent = `${low.n}, lowest of the ten: ${low.v.toFixed(2)} (${dayLabel(low.i)})`;
+
+// hover layer: crosshair + one tooltip with every series
+const cross = el("line", {y1: m.t, y2: m.t + ih, stroke: "var(--text-muted)", "stroke-width": 1, visibility: "hidden"});
+function show(i) {
+  cross.setAttribute("x1", x(i)); cross.setAttribute("x2", x(i)); cross.setAttribute("visibility", "visible");
+  tip.replaceChildren();
+  const d = document.createElement("div"); d.className = "d";
+  d.textContent = dayLabel(i) + (i === RELEASE ? " (4.2 shipped)" : ""); tip.appendChild(d);
+  names.map(n => ({n, v: S[n][i]})).sort((a, b) => b.v - a.v || a.n.localeCompare(b.n)).forEach(o => {
+    const r = document.createElement("div"); r.className = "r";
+    const k = document.createElement("span"); k.className = "k";
+    k.style.borderColor = o.n === "Farlight" ? "var(--series-2)" : "var(--context)";
+    k.style.borderTopWidth = o.n === "Farlight" ? "3px" : "2px";
+    const nm = document.createElement("span"); nm.textContent = o.n;
+    if (o.n === "Farlight") nm.style.color = "var(--text-primary)";
+    const b = document.createElement("b"); b.textContent = o.v.toFixed(2);
+    r.append(k, nm, b); tip.appendChild(r);
+  });
+  tip.style.display = "block";
+  const sx = x(i) / W * svg.clientWidth;
+  tip.style.left = (sx + 14 + tip.offsetWidth > wrap.clientWidth ? sx - 14 - tip.offsetWidth : sx + 14) + "px";
+  tip.style.top = "10px";
+}
+function hide() { cross.setAttribute("visibility", "hidden"); tip.style.display = "none"; }
+for (let i = 0; i < N; i++) {
+  const bw = iw / (N - 1);
+  const r = el("rect", {x: x(i) - bw / 2, y: m.t, width: bw, height: ih, fill: "transparent", tabindex: i % 7 === 0 ? 0 : -1,
+    "aria-label": `${dayLabel(i)}: Farlight ${S["Farlight"][i].toFixed(2)}; the other ten range ${Math.min(...names.slice(1).map(n => S[n][i])).toFixed(2)} to ${Math.max(...names.slice(1).map(n => S[n][i])).toFixed(2)}`});
+  r.addEventListener("pointermove", () => show(i));
+  r.addEventListener("focus", () => show(i));
+  r.addEventListener("pointerleave", hide);
+  r.addEventListener("blur", hide);
+}
+
+// table view
+const head = document.querySelector("#tbl thead"), body = document.querySelector("#tbl tbody");
+const hr = document.createElement("tr");
+["Day"].concat(names).forEach(t => { const th = document.createElement("th"); th.textContent = t; hr.appendChild(th); });
+head.appendChild(hr);
+for (let i = 0; i < N; i++) {
+  const tr = document.createElement("tr");
+  [dayLabel(i)].concat(names.map(n => S[n][i].toFixed(2))).forEach(t => { const td = document.createElement("td"); td.textContent = t; tr.appendChild(td); });
+  body.appendChild(tr);
+}
+</script>
+</body>
+</html>
