@@ -117,3 +117,11 @@ Please review the code, 00-rook/code/dispatch-routing/ and summarize what it is 
 ### 26.
 
 Please turn this into the written description of how pinging is decided
+
+### 27.
+
+Would an update to retry as opposed to treating as turn down make an imapct?
+
+### 28.
+
+Please add this as a row in the options table of the brief
