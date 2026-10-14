@@ -109,3 +109,11 @@ Please chart this as a weekly stacked chart of takes, turn-downs and misses, or 
 ### 24.
 
 If I'd only asked for the number, not the rows, what would I have missed?
+
+### 25.
+
+Please review the code, 00-rook/code/dispatch-routing/ and summarize what it is doing in simple language please
+
+### 26.
+
+Please turn this into the written description of how pinging is decided
