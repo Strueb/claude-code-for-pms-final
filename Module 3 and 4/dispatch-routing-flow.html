@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How Dispatch routing works: flow diagram</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { margin: 0; padding: 24px; background: #f9f9f7; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .viz-root {
+    color-scheme: light;
+    --surface-1: #fcfcfb; --surface-2: #f1f0ec; --text-primary: #0b0b0b; --text-secondary: #52514e; --text-muted: #898781;
+    --line: #898781; --border: rgba(11,11,11,0.10);
+    --step: #2a78d6;      /* normal steps */
+    --flag: #eb6834;      /* changed in 4.2, or where a miss is treated as a turn-down */
+    --done: #1baf7a;      /* end states */
+    max-width: 860px; margin: 0 auto; padding: 20px 24px 16px; background: var(--surface-1);
+    border: 1px solid var(--border); border-radius: 12px; color: var(--text-primary);
+  }
+  @media (prefers-color-scheme: dark) {
+    body { background: #0d0d0d; }
+    .viz-root {
+      color-scheme: dark;
+      --surface-1: #1a1a19; --surface-2: #262624; --text-primary: #ffffff; --text-secondary: #c3c2b7; --text-muted: #898781;
+      --line: #898781; --border: rgba(255,255,255,0.10);
+      --step: #3987e5; --flag: #d95926; --done: #199e70;
+    }
+  }
+  h1 { font-size: 18px; font-weight: 600; margin: 0 0 4px; }
+  .sub { font-size: 13px; color: var(--text-secondary); margin: 0 0 10px; }
+  svg { width: 100%; height: auto; display: block; }
+  svg text { font-family: inherit; fill: var(--text-primary); }
+  .t1 { font-size: 13px; font-weight: 600; }
+  .t2 { font-size: 11px; fill: var(--text-secondary); }
+  .t3 { font-size: 11px; fill: var(--text-secondary); }
+  .tag { font-size: 11px; fill: var(--text-muted); }
+  .edge { stroke: var(--line); stroke-width: 1.5; fill: none; }
+  .box { fill: var(--surface-2); stroke: var(--step); stroke-width: 1.5; }
+  .box.flag { stroke: var(--flag); stroke-width: 2; }
+  .pill { fill: var(--surface-2); stroke: var(--done); stroke-width: 1.5; }
+  .pill.flag { stroke: var(--flag); stroke-width: 2; }
+  .note { fill: none; stroke: var(--flag); stroke-width: 1; stroke-dasharray: 4 3; }
+  .dec { fill: var(--surface-2); stroke: var(--step); stroke-width: 1.5; }
+  .lab { font-size: 11px; font-weight: 600; fill: var(--text-secondary); }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 22px; font-size: 12px; color: var(--text-secondary); margin: 10px 0 0; }
+  .legend span { display: inline-flex; align-items: center; gap: 8px; }
+  .legend i { display: inline-block; width: 16px; height: 12px; border: 2px solid; border-radius: 3px; background: var(--surface-2); }
+  details { margin-top: 12px; font-size: 13px; color: var(--text-secondary); }
+  summary { cursor: pointer; }
+  ol { margin: 8px 0 0; padding-left: 22px; }
+  li { margin: 3px 0; }
+  .foot { font-size: 12px; color: var(--text-muted); margin-top: 10px; }
+</style>
+</head>
+<body>
+<div class="viz-root">
+  <h1>How Dispatch decides who to ask, and what happens when they don't say yes</h1>
+  <p class="sub">The routing code in <code>00-rook/code/dispatch-routing/</code>, as it stands after 4.2 (12 Aug 2026).</p>
+
+  <svg viewBox="0 0 820 870" role="img"
+       aria-label="Flow diagram. A callout arrives. Dispatch finds who is available, ranks them best first, then takes the next responder on the list, pings their phone and waits up to 60 seconds. If they take it, the score goes up 0.08 and the callout is filled. If they turn it down, or do not answer and the offer is withdrawn and recorded as missed, the score goes down 0.12 in both cases. If there are more responders it moves to the next one, otherwise the callout goes unfilled with no retry.">
+    <defs>
+      <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+        <path d="M0 0 L10 5 L0 10 Z" style="fill: var(--line)"/>
+      </marker>
+    </defs>
+
+    <!-- 1 start -->
+    <rect class="pill" x="150" y="16" width="300" height="44" rx="22" style="stroke: var(--step)"/>
+    <text class="t1" x="300" y="35" text-anchor="middle">A callout arrives</text>
+    <text class="t2" x="300" y="51" text-anchor="middle">region, time, location, skills needed</text>
+    <path class="edge" d="M300 60 V84" marker-end="url(#arrow)"/>
+
+    <!-- 2 who's free -->
+    <rect class="box" x="150" y="84" width="300" height="56" rx="8"/>
+    <text class="t1" x="300" y="106" text-anchor="middle">Find who's free</text>
+    <text class="t2" x="300" y="124" text-anchor="middle">availability.py: everyone marked available here</text>
+    <path class="edge" d="M300 140 V170" marker-end="url(#arrow)"/>
+
+    <!-- 3 rank -->
+    <rect class="box flag" x="150" y="170" width="300" height="84" rx="8"/>
+    <text class="t1" x="300" y="192" text-anchor="middle">Rank them, best first</text>
+    <text class="t2" x="300" y="210" text-anchor="middle">routing.py: score = 0.60 × travel time</text>
+    <text class="t2" x="300" y="225" text-anchor="middle">+ 0.25 × recent acceptance + 0.15 × skills</text>
+    <text class="t2" x="300" y="242" text-anchor="middle">Nobody is removed; this only sets the order</text>
+    <path class="note" d="M480 170 h200 v68 h-200 z"/>
+    <text class="t3" x="490" y="188">4.2: proximity weight 0.45 → 0.60;</text>
+    <text class="t3" x="490" y="204">recent acceptance 0.40 → 0.25.</text>
+    <text class="t3" x="490" y="224">(config.py)</text>
+    <path class="edge" d="M450 212 H480" stroke-dasharray="3 3"/>
+    <path class="edge" d="M300 254 V278" marker-end="url(#arrow)"/>
+
+    <!-- 4 next responder -->
+    <rect class="box" x="150" y="278" width="300" height="44" rx="8"/>
+    <text class="t1" x="300" y="298" text-anchor="middle">Take the next responder on the list</text>
+    <text class="t2" x="300" y="313" text-anchor="middle">offer.py</text>
+    <path class="edge" d="M300 322 V346" marker-end="url(#arrow)"/>
+
+    <!-- 5 ping and wait -->
+    <rect class="box flag" x="150" y="346" width="300" height="56" rx="8"/>
+    <text class="t1" x="300" y="368" text-anchor="middle">Ping their phone and wait</text>
+    <text class="t2" x="300" y="386" text-anchor="middle">offer.py: up to 60 seconds for an answer</text>
+    <path class="note" d="M480 346 h200 v48 h-200 z"/>
+    <text class="t3" x="490" y="366">4.2: ping wait cut from</text>
+    <text class="t3" x="490" y="382">90 seconds to 60 (config.py)</text>
+    <path class="edge" d="M450 374 H480" stroke-dasharray="3 3"/>
+    <path class="edge" d="M300 402 V424" marker-end="url(#arrow)"/>
+
+    <!-- 6 decision -->
+    <path class="dec" d="M300 424 L420 470 L300 516 L180 470 Z"/>
+    <text class="t1" x="300" y="466" text-anchor="middle">What did they</text>
+    <text class="t1" x="300" y="482" text-anchor="middle">do?</text>
+
+    <!-- taken -->
+    <path class="edge" d="M180 470 H134" marker-end="url(#arrow)"/>
+    <text class="lab" x="157" y="462" text-anchor="middle">took it</text>
+    <rect class="box" x="14" y="444" width="120" height="52" rx="8"/>
+    <text class="t1" x="74" y="466" text-anchor="middle">Taken</text>
+    <text class="t2" x="74" y="483" text-anchor="middle">score +0.08</text>
+    <path class="edge" d="M74 496 V530" marker-end="url(#arrow)"/>
+    <rect class="pill" x="14" y="530" width="120" height="44" rx="22"/>
+    <text class="t1" x="74" y="549" text-anchor="middle">Callout filled</text>
+    <text class="t2" x="74" y="564" text-anchor="middle">stop</text>
+
+    <!-- turned down -->
+    <path class="edge" d="M420 470 H470" marker-end="url(#arrow)"/>
+    <text class="lab" x="445" y="462" text-anchor="middle">said no</text>
+    <rect class="box flag" x="470" y="444" width="170" height="52" rx="8"/>
+    <text class="t1" x="555" y="466" text-anchor="middle">Turned down</text>
+    <text class="t2" x="555" y="483" text-anchor="middle">score −0.12</text>
+    <path class="edge" d="M555 496 V696 H300" />
+
+    <!-- missed -->
+    <path class="edge" d="M300 516 V544" marker-end="url(#arrow)"/>
+    <text class="lab" x="312" y="534">no answer in 60 s</text>
+    <rect class="box" x="150" y="544" width="300" height="52" rx="8"/>
+    <text class="t1" x="300" y="566" text-anchor="middle">Offer withdrawn from their phone</text>
+    <text class="t2" x="300" y="583" text-anchor="middle">recorded as MISSED (offer.py)</text>
+    <path class="edge" d="M300 596 V624" marker-end="url(#arrow)"/>
+    <rect class="box flag" x="150" y="624" width="300" height="52" rx="8"/>
+    <text class="t1" x="300" y="646" text-anchor="middle">Score −0.12, same as a turn-down</text>
+    <text class="t2" x="300" y="663" text-anchor="middle">dispatch() treats the two alike</text>
+    <path class="edge" d="M300 676 V696"/>
+    <path class="edge" d="M300 696 V716" marker-end="url(#arrow)"/>
+
+    <path class="note" d="M10 596 h140 v108 h-140 z"/>
+    <text class="t3" x="18" y="616">A miss costs the</text>
+    <text class="t3" x="18" y="631">same as a turn-down.</text>
+    <text class="t3" x="18" y="651">Scores never decay</text>
+    <text class="t3" x="18" y="666">and only change when</text>
+    <text class="t3" x="18" y="681">the responder is</text>
+    <text class="t3" x="18" y="696">pinged.</text>
+    <path class="edge" d="M150 650 H150" />
+
+    <!-- 7 more responders -->
+    <path class="dec" d="M300 716 L420 760 L300 804 L180 760 Z"/>
+    <text class="t1" x="300" y="756" text-anchor="middle">Anyone left</text>
+    <text class="t1" x="300" y="772" text-anchor="middle">on the list?</text>
+    <!-- yes: loop back -->
+    <path class="edge" d="M420 760 H700 V300 H450" marker-end="url(#arrow)"/>
+    <text class="lab" x="560" y="752" text-anchor="middle">yes: ask the next one</text>
+    <!-- no: unfilled -->
+    <path class="edge" d="M180 760 H160" marker-end="url(#arrow)"/>
+    <text class="lab" x="170" y="752" text-anchor="middle">no</text>
+    <rect class="pill flag" x="10" y="736" width="150" height="48" rx="24"/>
+    <text class="t1" x="85" y="757" text-anchor="middle">Unfilled</text>
+    <text class="t2" x="85" y="773" text-anchor="middle">returns nobody</text>
+    <text class="t3" x="10" y="806">No retry, no alert to the</text>
+    <text class="t3" x="10" y="821">handler, nothing recorded.</text>
+  </svg>
+
+  <div class="legend">
+    <span><i style="border-color: var(--step)"></i>A step in the routing</span>
+    <span><i style="border-color: var(--flag)"></i>Changed in 4.2, or where a miss is treated like a turn-down</span>
+    <span><i style="border-color: var(--done)"></i>An end state</span>
+  </div>
+
+  <details>
+    <summary>The same flow as text</summary>
+    <ol>
+      <li>A callout arrives with a region, a time, a location and the skills it needs.</li>
+      <li>Dispatch finds everyone marked available in that region now (<code>availability.py</code>). It does not change anyone's availability.</li>
+      <li>It scores each of them: 0.60 × travel-time closeness + 0.25 × recent-acceptance score + 0.15 × share of needed skills they have (<code>routing.py</code>, weights in <code>config.py</code>), and sorts best first. Nobody is removed.</li>
+      <li>It takes the next responder on the list, pings their phone and waits up to 60 seconds (<code>offer.py</code>).</li>
+      <li>If they take it, their score goes up 0.08 and the callout is filled.</li>
+      <li>If they turn it down, their score goes down 0.12 and Dispatch moves on.</li>
+      <li>If they don't answer in 60 seconds, the offer is withdrawn from their phone and recorded as missed. Their score goes down 0.12, the same as a turn-down, and Dispatch moves on.</li>
+      <li>If there is nobody left, the callout is unfilled: the code returns nobody, with no retry and no alert.</li>
+    </ol>
+  </details>
+  <p class="foot">Drawn from reading the code, not from running it. <code>availability.py</code>, the device calls in <code>offer.py</code> and the travel-time estimate are placeholders in this copy, so what they do inside is not shown. Scores are held in <code>history.py</code>: between 0 and 1, starting at 0.5. A responder's score only changes when they are pinged.</p>
+</div>
+</body>
+</html>
