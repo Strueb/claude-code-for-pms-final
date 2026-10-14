@@ -90,3 +90,11 @@ Would updating back to 90 seconds address the issue for 4.2?
 ### 19.
 
 Please add this reasoning to the option brief for Helen
+
+### 20.
+
+Please chart Farlight’s weekly pings next to their replayed score
+
+### 21.
+
+Please add the Farlight handler’s tickets as markers on the score panel.
