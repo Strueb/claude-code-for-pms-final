@@ -98,3 +98,11 @@ Please chart Farlight’s weekly pings next to their replayed score
 ### 21.
 
 Please add the Farlight handler’s tickets as markers on the score panel.
+
+### 22.
+
+Can we track Farlights Takes vs Turn Downs?
+
+### 23.
+
+Please chart this as a weekly stacked chart of takes, turn-downs and misses, or add it as a panel on the Farlight chart.
