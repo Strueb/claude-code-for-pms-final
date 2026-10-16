@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rook Dispatch console: prototype</title>
+<style>
+  :root { --navy:#1F3864; --purple:#7c3aed; --pl:#f3e8ff; --g1:#f3f4f6; --g2:#d1d5db; --tx:#1f2937; --mut:#6b7280; --ok:#047857; --okl:#ecfdf5; --bad:#b91c1c; --badl:#fef2f2; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: Arial, Helvetica, sans-serif; color:var(--tx); background:#eef0f4; }
+  header { background:var(--navy); color:#fff; padding:12px 24px; display:flex; align-items:center; gap:24px; }
+  header .logo { font-weight:bold; font-size:18px; letter-spacing:.5px; }
+  header .who { margin-left:auto; font-size:13px; opacity:.85; }
+  nav { display:flex; gap:4px; padding:0 24px; background:#fff; border-bottom:1px solid var(--g2); }
+  nav button { border:0; background:none; padding:14px 18px; font-size:14px; cursor:pointer; color:var(--mut); border-bottom:3px solid transparent; }
+  nav button.on { color:var(--navy); font-weight:bold; border-bottom-color:var(--purple); }
+  nav .tag { font-size:10px; background:var(--pl); color:var(--purple); border-radius:8px; padding:2px 6px; margin-left:6px; font-weight:bold; }
+  main { padding:20px 24px 40px; max-width:1100px; margin:0 auto; }
+  .note { font-size:12px; color:var(--mut); margin:0 0 14px; }
+  h2 { margin:0 0 4px; font-size:20px; color:var(--navy); }
+  .panel { background:#fff; border:1px solid var(--g2); border-radius:10px; padding:16px; }
+  .stats { display:flex; gap:12px; margin:12px 0 16px; }
+  .stat { flex:1; background:#fff; border:1px solid var(--g2); border-radius:10px; padding:10px 14px; }
+  .stat b { display:block; font-size:22px; color:var(--navy); }
+  .stat span { font-size:12px; color:var(--mut); }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th { text-align:left; font-size:12px; color:var(--mut); font-weight:normal; padding:8px 10px; border-bottom:1px solid var(--g2); }
+  td { padding:10px; border-bottom:1px solid var(--g1); vertical-align:middle; }
+  tr.quiet td { background:#faf5ff; }
+  .pill { display:inline-block; font-size:12px; border-radius:10px; padding:2px 9px; }
+  .pill.av { background:var(--okl); color:var(--ok); }
+  .pill.q { background:var(--pl); color:var(--purple); font-weight:bold; }
+  .pill.c { background:var(--okl); color:var(--ok); font-weight:bold; }
+  button.act { background:var(--purple); color:#fff; border:0; border-radius:6px; padding:7px 12px; font-size:13px; cursor:pointer; }
+  button.act:hover { background:#6d28d9; }
+  button.sec { background:#fff; color:var(--navy); border:1px solid var(--g2); border-radius:6px; padding:7px 12px; font-size:13px; cursor:pointer; }
+  button.sec:hover { background:var(--g1); }
+  .banner { background:var(--pl); border:1.5px dashed var(--purple); border-radius:10px; padding:12px 16px; margin-bottom:14px; font-size:14px; display:flex; gap:12px; align-items:center; }
+  .banner.none { background:var(--okl); border-color:var(--ok); border-style:solid; }
+  .modal-bg { position:fixed; inset:0; background:rgba(17,24,39,.45); display:none; align-items:center; justify-content:center; z-index:10; }
+  .modal-bg.on { display:flex; }
+  .modal { background:#fff; border-radius:12px; padding:22px; width:440px; max-width:92vw; }
+  .modal h3 { margin:0 0 6px; color:var(--navy); }
+  .modal label { display:flex; gap:10px; align-items:flex-start; margin:12px 0; font-size:14px; }
+  .modal .row { display:flex; gap:8px; justify-content:flex-end; margin-top:16px; }
+  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--navy); color:#fff; padding:10px 18px; border-radius:8px; font-size:14px; display:none; z-index:20; }
+  .toast.on { display:block; }
+  .grid { display:grid; grid-template-columns: 1.15fr 1fr; gap:16px; }
+  .phonewrap { display:flex; justify-content:center; }
+  .phone { width:270px; height:480px; background:#111827; border-radius:34px; padding:14px; box-shadow:0 8px 24px rgba(0,0,0,.25); }
+  .screen { background:#fff; border-radius:22px; height:100%; padding:18px 14px; display:flex; flex-direction:column; text-align:center; position:relative; overflow:hidden; }
+  .screen .clock { font-size:11px; color:var(--mut); }
+  .idle { margin:auto; color:var(--mut); font-size:14px; }
+  .ping { margin:10px 0 auto; }
+  .ping .big { font-size:18px; font-weight:bold; color:var(--navy); margin:12px 0 4px; }
+  .ping .meta { font-size:12px; color:var(--mut); }
+  .ping.second { animation: pulse .8s 3; }
+  @keyframes pulse { 50% { background:var(--pl); } }
+  .phone .btns { display:flex; gap:8px; margin-top:auto; }
+  .phone .btns button { flex:1; padding:12px 0; border:0; border-radius:8px; font-size:14px; cursor:pointer; font-weight:bold; }
+  .take { background:var(--ok); color:#fff; } .decl { background:var(--g1); color:var(--tx); }
+  .phone .btns button:disabled { opacity:.35; cursor:default; }
+  .badge2 { background:var(--purple); color:#fff; font-size:11px; border-radius:8px; padding:3px 8px; display:inline-block; margin-top:8px; }
+  .bar { position:relative; height:28px; background:var(--g1); border-radius:6px; margin:14px 0 6px; overflow:hidden; }
+  .fill { position:absolute; left:0; top:0; bottom:0; width:0; background:#c4b5fd; }
+  .mark { position:absolute; top:0; bottom:0; width:2px; background:var(--purple); }
+  .tl { display:flex; justify-content:space-between; font-size:11px; color:var(--mut); }
+  .ctrl { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:10px 0; font-size:13px; }
+  select { padding:6px; border:1px solid var(--g2); border-radius:6px; font-size:13px; }
+  .log { font-size:13px; max-height:210px; overflow:auto; border-top:1px solid var(--g1); margin-top:8px; }
+  .log div { padding:6px 2px; border-bottom:1px solid var(--g1); }
+  .log .ok { color:var(--ok); } .log .bad { color:var(--bad); } .log .new { color:var(--purple); font-weight:bold; }
+  .score { display:flex; align-items:baseline; gap:8px; font-size:13px; color:var(--mut); }
+  .score b { font-size:24px; color:var(--navy); }
+  .outcome { margin-top:10px; padding:10px 12px; border-radius:8px; font-size:14px; display:none; }
+  .outcome.ok { background:var(--okl); color:var(--ok); display:block; }
+  .outcome.bad { background:var(--badl); color:var(--bad); display:block; }
+  .sw { display:inline-flex; gap:6px; align-items:center; }
+  @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } .stats { flex-wrap:wrap; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">ROOK DISPATCH</div>
+  <div>Handler console</div>
+  <div class="who">Signed in as a handler &middot; prototype with made-up data</div>
+</header>
+<nav>
+  <button id="t1" class="on">Responders<span class="tag">NEW: quiet flags</span></button>
+  <button id="t2">Retry on a missed ping<span class="tag">NEW demo</span></button>
+</nav>
+
+<main>
+<!-- TAB 1 -->
+<section id="p1">
+  <h2>Your responders</h2>
+  <p class="note">Illustrative prototype. Responder names are placeholders. "N" is set to 5 days here; the real value is still to be decided.</p>
+  <div id="banner"></div>
+  <div class="stats">
+    <div class="stat"><b id="sAvail">6</b><span>available now</span></div>
+    <div class="stat"><b id="sQuiet">2</b><span>quiet for 5+ days</span></div>
+    <div class="stat"><b>3</b><span>callouts this week</span></div>
+  </div>
+  <div class="panel">
+    <table>
+      <thead><tr><th>Responder</th><th>Status</th><th>Last offered a callout</th><th>Taken, last 30 days</th><th></th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- TAB 2 -->
+<section id="p2" style="display:none">
+  <h2>Retry on a missed ping</h2>
+  <p class="note">Pick what the responder does, press Start, and watch one ping play out. Time runs faster than real life. Compare "Retry on" with "Retry off (today)".</p>
+  <div class="grid">
+    <div class="panel">
+      <div class="ctrl">
+        <span class="sw"><b>Mode:</b>
+          <label><input type="radio" name="mode" value="on" checked> Retry on (new)</label>
+          <label><input type="radio" name="mode" value="off"> Retry off (today)</label>
+        </span>
+      </div>
+      <div class="ctrl">
+        <label>The responder: <select id="scen">
+          <option value="quick">Answers straight away (at 10s)</option>
+          <option value="late" selected>Misses the first alert, only notices a second one (at 55s)</option>
+          <option value="never">Never answers</option>
+          <option value="down">Turns it down (at 20s)</option>
+          <option value="manual">I will tap on the phone myself</option>
+        </select></label>
+        <label>Speed: <select id="spd"><option value="5">5x</option><option value="10" selected>10x</option><option value="1">Real time</option></select></label>
+      </div>
+      <div class="ctrl"><button class="act" id="start">Start ping</button><button class="sec" id="reset">Reset</button></div>
+      <div class="bar"><div class="fill" id="fill"></div><div class="mark" id="mk" style="left:50%"></div></div>
+      <div class="tl"><span>0s ping sent</span><span id="mkl">45s retry</span><span>90s moves on</span></div>
+      <div class="score"><span>Responder score (illustrative)</span><b id="score">0.50</b><span id="delta"></span></div>
+      <div class="outcome" id="outcome"></div>
+      <div class="log" id="log"></div>
+    </div>
+    <div class="phonewrap">
+      <div class="phone"><div class="screen" id="screen">
+        <div class="clock">Responder's phone</div>
+        <div class="idle" id="idle">No ping right now.</div>
+        <div class="ping" id="ping" style="display:none">
+          <div class="meta" id="pm">New callout</div>
+          <div class="big">Incident 4417<br>Structural entry</div>
+          <div class="meta">12 min away &middot; offered to you</div>
+          <div class="badge2" id="b2" style="display:none">Second alert: still open</div>
+        </div>
+        <div class="btns"><button class="take" id="bTake" disabled>Take it</button><button class="decl" id="bDecl" disabled>Turn down</button></div>
+      </div></div>
+    </div>
+  </div>
+</section>
+</main>
+
+<div class="modal-bg" id="mbg"><div class="modal">
+  <h3 id="mt">Confirm availability and phone</h3>
+  <div id="mb"></div>
+  <div class="row"><button class="sec" id="mc">Cancel</button><button class="act" id="mok">Confirm</button></div>
+</div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const N = 5;
+// ---------- Tab 1 ----------
+const R = [
+  {n:'Responder 01', last:'today', taken:11, q:0},
+  {n:'Responder 02', last:'yesterday', taken:9, q:0},
+  {n:'Responder 03', last:'9 days ago', taken:1, q:9},
+  {n:'Responder 04', last:'today', taken:10, q:0},
+  {n:'Responder 05', last:'2 days ago', taken:7, q:0},
+  {n:'Responder 06', last:'12 days ago', taken:0, q:12},
+  {n:'Responder 07', last:'yesterday', taken:8, q:0}
+];
+let pending = null;
+function toast(t){ const e=$('#toast'); e.textContent=t; e.classList.add('on'); setTimeout(()=>e.classList.remove('on'),2600); }
+function render(){
+  const quiet = R.filter(r=>r.q>=N && !r.conf);
+  $('#sQuiet').textContent = quiet.length;
+  $('#sAvail').textContent = R.length - 1;
+  $('#banner').innerHTML = quiet.length
+    ? '<div class="banner"><div><b>' + quiet.length + ' of your responders have been quiet for ' + N + '+ days.</b><br>They are available but have not been offered a callout. Check their availability and phone so they are back in the order.</div></div>'
+    : '<div class="banner none"><div><b>No quiet responders.</b> Everyone has been offered a callout in the last ' + N + ' days, or has been confirmed.</div></div>';
+  $('#rows').innerHTML = R.map((r,i)=>{
+    const isQ = r.q>=N && !r.conf;
+    const status = r.conf ? '<span class="pill c">Confirmed today</span>' : isQ ? '<span class="pill q">Quiet for ' + r.q + ' days</span>' : '<span class="pill av">Available</span>';
+    const last = r.conf ? 'next callout: ranked normally' : r.last;
+    const btn = isQ ? '<button class="act" data-i="'+i+'">Confirm availability and phone</button>' : r.conf ? '<button class="sec" data-u="'+i+'">Undo</button>' : '';
+    return '<tr class="'+(isQ?'quiet':'')+'"><td><b>'+r.n+'</b></td><td>'+status+'</td><td>'+last+'</td><td>'+r.taken+'</td><td>'+btn+'</td></tr>';
+  }).join('');
+}
+$('#rows').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  if (b.dataset.u!==undefined){ R[b.dataset.u].conf=false; render(); return; }
+  pending = +b.dataset.i; const r = R[pending];
+  $('#mb').innerHTML = '<p style="font-size:14px;margin:0 0 4px"><b>'+r.n+'</b> has not been offered a callout for '+r.q+' days.</p>'
+    + '<label><input type="checkbox" id="c1"> Their availability is set correctly</label>'
+    + '<label><input type="checkbox" id="c2"> Their phone is on and notifications are allowed</label>';
+  $('#mbg').classList.add('on');
+});
+$('#mc').onclick = ()=> $('#mbg').classList.remove('on');
+$('#mok').onclick = ()=>{
+  if(!$('#c1').checked || !$('#c2').checked){ toast('Tick both boxes to confirm.'); return; }
+  R[pending].conf = true; $('#mbg').classList.remove('on'); render();
+  toast(R[pending].n + ' confirmed. Offered the next suitable callout.');
+};
+// ---------- Tabs ----------
+function tab(n){ $('#p1').style.display = n==1?'':'none'; $('#p2').style.display = n==2?'':'none'; $('#t1').classList.toggle('on',n==1); $('#t2').classList.toggle('on',n==2); }
+$('#t1').onclick=()=>tab(1); $('#t2').onclick=()=>tab(2);
+// ---------- Tab 2: retry demo ----------
+let t=0, timer=null, live=false, retried=false, score=0.50, ans=null;
+const mode = ()=> document.querySelector('input[name=mode]:checked').value;
+function log(msg, cls){ const d=document.createElement('div'); d.className=cls||''; d.textContent=fmt(t)+'  '+msg; $('#log').prepend(d); }
+function fmt(s){ return String(Math.floor(s)).padStart(2,'0')+'s'; }
+function setScore(v, d){ score=Math.max(0,Math.min(1,v)); $('#score').textContent=score.toFixed(2); $('#delta').textContent = d||''; }
+function out(kind, msg){ const o=$('#outcome'); o.className='outcome '+kind; o.textContent=msg; }
+function phone(on){ $('#idle').style.display=on?'none':''; $('#ping').style.display=on?'':'none'; $('#bTake').disabled=!on; $('#bDecl').disabled=!on; }
+function stop(){ clearInterval(timer); timer=null; live=false; phone(false); }
+function finish(){ stop(); }
+function take(){ if(!live) return; log(retried ? 'Responder takes it after the second alert.' : 'Responder takes it.', 'ok');
+  setScore(score+0.08, '+0.08 (taken)'); out('ok', retried ? 'Taken after the retry. No miss recorded and no penalty. Today, this ping would have been a miss.' : 'Taken. The callout is filled.'); finish(); }
+function decl(){ if(!live) return; log('Responder turns it down. Ping moves to the next responder.', 'bad');
+  setScore(score-0.12, '-0.12 (turned down)'); out('bad', 'Turned down. The ping moves on and the score drops.'); finish(); }
+function miss(){ log('Wait is over, no answer. Recorded as missed. Ping moves to the next responder.', 'bad');
+  setScore(score-0.12, '-0.12 (missed)'); out('bad', retried ? 'Missed even after the retry. Recorded as a miss and the ping moves on.' : 'Missed. Recorded and the ping moves on. With the retry on, this responder would have had a second alert at 45s.'); finish(); }
+function start(){
+  stop(); t=0; retried=false; $('#log').innerHTML=''; $('#outcome').className='outcome'; $('#delta').textContent='';
+  $('#b2').style.display='none'; $('#ping').classList.remove('second'); $('#fill').style.width='0';
+  $('#mk').style.display = mode()==='on' ? '' : 'none'; $('#mkl').style.visibility = mode()==='on' ? 'visible' : 'hidden';
+  live=true; phone(true); log('Ping sent to the top responder. 90 second wait starts.');
+  const sc=$('#scen').value, sp=+$('#spd').value; const at = {quick:10, late:55, down:20}[sc]; let done=false;
+  timer=setInterval(()=>{
+    t += 0.1*sp; $('#fill').style.width = Math.min(100, t/90*100)+'%';
+    if(live && mode()==='on' && !retried && t>=45){ retried=true; log('No answer yet. Retry: second alert sent to the same responder.', 'new');
+      $('#b2').style.display=''; $('#ping').classList.remove('second'); void $('#ping').offsetWidth; $('#ping').classList.add('second'); }
+    const noticesNever = (sc==='late' && mode()==='off');
+    if(live && sc!=='manual' && sc!=='never' && !noticesNever && !done && t>=at){ done=true; if(sc==='down') decl(); else take(); return; }
+    if(live && t>=90){ miss(); }
+  }, 100);
+}
+$('#start').onclick=start;
+$('#reset').onclick=()=>{ stop(); t=0; $('#log').innerHTML=''; $('#outcome').className='outcome'; $('#fill').style.width='0'; $('#delta').textContent=''; setScore(0.50); };
+$('#bTake').onclick=take; $('#bDecl').onclick=decl;
+document.querySelectorAll('input[name=mode]').forEach(i=>i.onchange=()=>{ $('#mk').style.display = mode()==='on' ? '' : 'none'; $('#mkl').style.visibility = mode()==='on' ? 'visible' : 'hidden'; });
+// deep links for checking: #retry, #retry-never
+if(location.hash.startsWith('#retry')){ tab(2); if(location.hash==='#retry-never'){ $('#scen').value='never'; start(); } if(location.hash==='#retry-late'){ start(); } }
+render();
+</script>
+</body>
+</html>
